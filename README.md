@@ -10,6 +10,16 @@
 
 Sistema web para la empresa **Rentar**, diseñado para administrar una flota de vehículos, gestionar clientes y controlar los alquileres realizados. El desarrollo de este trabajo práctico se divide en tres hitos incrementales, adaptando la interfaz web y aplicando diferentes mecanismos de comunicación entre los componentes.
 
+---
+
+## 🎯 Objetivos y Organización
+
+El seguimiento de las tareas, los requerimientos de cada hito y el estado general del proyecto se gestionan a través de nuestro tablero ágil:
+
+* **Tablero de Trello:** https://trello.com/invite/b/6aa6fcdb9c152274c9fcadfe/ATTIdb3e399d4585cb0f9324b88947220ab843BABD50/sistemas-distribuidos-tp
+
+---
+
 ### 🎯 Hitos del Desarrollo
 - [x] **Hito 1:** APIs REST y GraphQL.
 - [ ] **Hito 2:** Integración con RPC.
