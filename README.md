@@ -77,10 +77,10 @@ Sistema web para la empresa **Rentar**, diseñado para administrar una flota de 
 
 Nombre y Apellido:
 
-Ivan Estanislao Sofia
-Leonardo Martin Vazquez Riveiro
-Federico Acosta Rosales
-Luca Fattorini
-Ivana Leiva Baldis
+* Ivan Estanislao Sofia
+* Leonardo Martin Vazquez Riveiro
+* Federico Acosta Rosales
+* Luca Fattorini
+* Ivana Leiva Baldis
 
 
