@@ -1,0 +1,4 @@
+type Query {
+    "Query de prueba para verificar que el servidor GraphQL responde"
+    health: String
+}
