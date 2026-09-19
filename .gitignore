@@ -26,6 +26,7 @@ dist/
 .vscode/
 *.iml
 
+
 # --- Sistema operativo ---
 .DS_Store
 Thumbs.db
