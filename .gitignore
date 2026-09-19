@@ -26,8 +26,6 @@ dist/
 .vscode/
 *.iml
 
-# --- Datos de prueba local ---
-db/mock_data.sql
 
 # --- Sistema operativo ---
 .DS_Store
