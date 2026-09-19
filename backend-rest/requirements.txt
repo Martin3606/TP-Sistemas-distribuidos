@@ -3,4 +3,6 @@ uvicorn[standard]>=0.30
 sqlalchemy>=2.0
 pymysql>=1.1
 python-dotenv>=1.0
-pydantic>=2.10
+pydantic[email]>=2.10
+email-validator>=2.0
+
