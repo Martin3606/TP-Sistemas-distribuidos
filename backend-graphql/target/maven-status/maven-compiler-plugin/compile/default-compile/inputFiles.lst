@@ -1,2 +1,14 @@
 C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\BackendGraphqlApplication.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\controller\ConsultaGraphQLController.java
 C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\controller\HealthController.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\dto\FiltroDisponibilidadInput.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\dto\FiltroReservaInput.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\Cliente.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\EstadoReserva.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\EstadoVehiculo.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\Reserva.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\TipoVehiculo.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\model\Vehiculo.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\repository\ClienteRepository.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\repository\ReservaRepository.java
+C:\Users\Martin\OneDrive\Desktop\Martin\Facultad\Desarrollo soft sist distribuidos\TP Sistemas distribuidos\backend-graphql\src\main\java\com\rentar\backendgraphql\repository\VehiculoRepository.java
