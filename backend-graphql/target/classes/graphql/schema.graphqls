@@ -1,0 +1,169 @@
+"""
+Tipos de vehículos disponibles en el sistema Rentar
+"""
+enum TipoVehiculo {
+    SEDAN
+    SUV
+    PICKUP
+    COUPE
+    HATCHBACK
+}
+
+"""
+Estados posibles de un vehículo de la flota
+"""
+enum EstadoVehiculo {
+    DISPONIBLE
+    RESERVADO
+    EN_ALQUILER
+}
+
+"""
+Estados posibles de una reserva
+"""
+enum EstadoReserva {
+    CONFIRMADA
+    CANCELADA
+    FINALIZADA
+}
+
+"""
+Representa a un cliente registrado en la plataforma Rentar
+"""
+type Cliente {
+    "Identificador único del cliente"
+    id: ID!
+    "Número de documento de identidad del cliente (único)"
+    documento: String!
+    "Nombre del cliente"
+    nombre: String!
+    "Apellido del cliente"
+    apellido: String!
+    "Dirección de correo electrónico (único)"
+    email: String!
+    "Teléfono de contacto"
+    telefono: String
+    "Fecha de nacimiento en formato YYYY-MM-DD"
+    fechaNacimiento: String
+    "Indica si el cliente se encuentra activo para nuevos alquileres"
+    activo: Boolean!
+}
+
+"""
+Representa a un vehículo perteneciente a la flota de Rentar
+"""
+type Vehiculo {
+    "Identificador único del vehículo"
+    id: ID!
+    "Patente o dominio del vehículo (único e inmutable)"
+    patente: String!
+    "Marca del vehículo"
+    marca: String!
+    "Modelo del vehículo"
+    modelo: String!
+    "Año de fabricación"
+    anio: Int!
+    "Color del vehículo"
+    color: String
+    "Categoría o tipo de vehículo"
+    tipoVehiculo: TipoVehiculo!
+    "Precio de alquiler por día"
+    precioDiario: Float!
+    "Estado operativo actual del vehículo"
+    estado: EstadoVehiculo!
+    "Indica si el vehículo está activo para ser reservado"
+    activo: Boolean!
+}
+
+"""
+Representa una reserva de vehículo realizada por un cliente
+"""
+type Reserva {
+    "Identificador único de la reserva"
+    id: ID!
+    "Cliente que realizó la reserva"
+    cliente: Cliente!
+    "Vehículo reservado"
+    vehiculo: Vehiculo!
+    "Fecha y hora de inicio de la reserva (formato ISO-8601)"
+    fechaInicio: String!
+    "Fecha y hora de finalización de la reserva (formato ISO-8601)"
+    fechaFin: String!
+    "Precio diario congelado al momento de la reserva"
+    precioDiarioSnapshot: Float!
+    "Importe total calculado según los días de alquiler"
+    importeTotal: Float!
+    "Estado de la reserva (CONFIRMADA, CANCELADA, FINALIZADA)"
+    estado: EstadoReserva!
+    "Cantidad de días de la reserva (calculado)"
+    cantidadDias: Int!
+}
+
+"""
+Parámetros de entrada para filtrar la disponibilidad de vehículos.
+Las fechas de inicio y finalización son obligatorias.
+"""
+input FiltroDisponibilidadInput {
+    "Fecha y hora de inicio requerida (formato ISO-8601: YYYY-MM-DDTHH:mm:ss)"
+    fechaInicio: String!
+    "Fecha y hora de finalización requerida (formato ISO-8601: YYYY-MM-DDTHH:mm:ss)"
+    fechaFin: String!
+    "Filtro opcional por tipo de vehículo"
+    tipoVehiculo: TipoVehiculo
+    "Filtro opcional por marca (coincidencia parcial)"
+    marca: String
+    "Filtro opcional por modelo (coincidencia parcial)"
+    modelo: String
+    "Precio diario mínimo opcional"
+    precioMin: Float
+    "Precio diario máximo opcional"
+    precioMax: Float
+}
+
+"""
+Parámetros de entrada opcionales para consultar reservas en el sistema
+"""
+input FiltroReservaInput {
+    "Identificador del cliente para filtrar sus reservas"
+    clienteId: ID
+    "Identificador del vehículo"
+    vehiculoId: ID
+    "Filtro por tipo de vehículo reservado"
+    tipoVehiculo: TipoVehiculo
+    "Filtro por estado de la reserva"
+    estado: EstadoReserva
+    "Fecha inicio desde (formato ISO-8601)"
+    fechaInicioDesde: String
+    "Fecha fin hasta (formato ISO-8601)"
+    fechaFinHasta: String
+}
+
+"""
+Consultas de la API GraphQL de Rentar
+"""
+type Query {
+    "Query de comprobación de estado del servicio"
+    health: String
+
+    """
+    [Requerimiento 2 - CLIENTE]
+    Consulta los vehículos disponibles para alquiler en un rango de fechas obligatorias.
+    Aplica filtros opcionales de tipo, marca, modelo y rango de precio diario.
+    Retorna únicamente aquellos vehículos activos y sin reservas confirmadas solapadas.
+    """
+    consultarDisponibilidad(filtro: FiltroDisponibilidadInput!): [Vehiculo!]!
+
+    """
+    [Requerimiento 5 - CLIENTE / ADMINISTRADOR]
+    Consulta las reservas registradas. Los filtros son opcionales.
+    Permite filtrar por cliente, vehículo, tipo de vehículo, estado y rango de fechas.
+    """
+    consultarReservas(filtro: FiltroReservaInput): [Reserva!]!
+
+    """
+    [Requerimiento 7 - CLIENTE]
+    Consulta el historial de alquileres (finalizados y cancelados) correspondientes a un cliente.
+    Calcula la cantidad de días e importe total.
+    """
+    historialAlquileres(clienteId: ID!): [Reserva!]!
+}
