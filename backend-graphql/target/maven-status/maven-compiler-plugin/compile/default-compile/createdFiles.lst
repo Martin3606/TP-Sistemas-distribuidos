@@ -1,2 +1,14 @@
+com\rentar\backendgraphql\model\Reserva.class
+com\rentar\backendgraphql\model\Cliente.class
 com\rentar\backendgraphql\controller\HealthController.class
+com\rentar\backendgraphql\model\Vehiculo.class
+com\rentar\backendgraphql\model\EstadoReserva.class
+com\rentar\backendgraphql\model\TipoVehiculo.class
+com\rentar\backendgraphql\dto\FiltroReservaInput.class
+com\rentar\backendgraphql\controller\ConsultaGraphQLController.class
+com\rentar\backendgraphql\repository\VehiculoRepository.class
+com\rentar\backendgraphql\dto\FiltroDisponibilidadInput.class
+com\rentar\backendgraphql\repository\ClienteRepository.class
 com\rentar\backendgraphql\BackendGraphqlApplication.class
+com\rentar\backendgraphql\repository\ReservaRepository.class
+com\rentar\backendgraphql\model\EstadoVehiculo.class
