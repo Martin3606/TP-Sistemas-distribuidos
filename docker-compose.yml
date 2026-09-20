@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rentar-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: rentar
+      MYSQL_USER: rentar_user
+      MYSQL_PASSWORD: rentar_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_data:
