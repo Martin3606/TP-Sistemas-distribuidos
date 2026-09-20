@@ -1,68 +1,84 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #f5f6fa;
-  color: #222;
-}
-
-.app-container {
+/* Login */
+.login-container {
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-}
-
-/* Navbar */
-.navbar {
-  background: #1e293b;
-  color: white;
-  padding: 1rem 2rem;
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-
-.navbar-logo {
-  font-weight: bold;
-  font-size: 1.3rem;
-}
-
-.navbar-links {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-}
-
-.navbar-links a {
-  color: #cbd5e1;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.navbar-links a:hover {
-  color: white;
-}
-
-.navbar-links a.active {
-  color: #38bdf8;
-  border-bottom: 2px solid #38bdf8;
-}
-
-/* Contenido */
-.contenido {
-  flex: 1;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
   padding: 2rem;
 }
 
-.contenido h1 {
-  margin-bottom: 1rem;
+.login-card {
+  background: white;
+  padding: 3rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
 }
 
-/* Footer */
-.footer {
-  text-align: center;
-  padding: 1rem;
-  background: #e2e8f0;
-  font-size: 0.85rem;
-  color: #475569;
+.login-card h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.3rem;
+  color: #1e293b;
 }
+
+.login-subtitulo {
+  color: #64748b;
+  margin-bottom: 2rem;
+}
+
+.login-opciones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .login-opciones { grid-template-columns: 1fr; }
+}
+
+.login-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-btn:hover { border-color: #2563eb; transform: translateY(-2px); }
+.login-btn.admin:hover { border-color: #2563eb; }
+.login-btn.cliente:hover { border-color: #10b981; }
+
+.login-icono { font-size: 2rem; }
+.login-titulo { font-weight: 600; color: #1e293b; }
+.login-desc { font-size: 0.85rem; color: #64748b; }
+
+/* Navbar usuario */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.navbar-rol {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.btn-logout {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.btn-logout:hover { background: #dc2626; }
