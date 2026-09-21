@@ -64,6 +64,16 @@ query {
 
 Debería responder `"ok"`.
 
+## 4. Frontend (React / Vite)
+
+Interfaz gráfica SPA (Single Page Application) integrada con ambos backends.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Estructura del repositorio
 
 ```
@@ -76,7 +86,3 @@ Debería responder `"ok"`.
 ├── docker-compose.yml
 └── README.md
 ```
-
-## Integrantes y tareas
-
-- (completar por tarjeta / hito)
