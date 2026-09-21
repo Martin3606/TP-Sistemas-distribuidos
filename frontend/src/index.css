@@ -4,22 +4,27 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: #f5f6fa;
   color: #222;
+  overflow-x: hidden;
 }
 
 .app-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 /* Navbar */
 .navbar {
   background: #1e293b;
   color: white;
-  padding: 1rem 2rem;
+  padding: 1rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  width: 100%;
 }
 
 .navbar-logo {
@@ -30,7 +35,8 @@ body {
 .navbar-links {
   list-style: none;
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .navbar-links a {
@@ -51,11 +57,25 @@ body {
 /* Contenido */
 .contenido {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem 1rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .contenido h1 {
   margin-bottom: 1rem;
+  font-size: 1.8rem;
+}
+
+@media (max-width: 600px) {
+  .contenido {
+    padding: 1rem 0.75rem;
+  }
+  .contenido h1 {
+    font-size: 1.4rem;
+  }
 }
 
 /* Footer */
@@ -65,4 +85,5 @@ body {
   background: #e2e8f0;
   font-size: 0.85rem;
   color: #475569;
+  width: 100%;
 }

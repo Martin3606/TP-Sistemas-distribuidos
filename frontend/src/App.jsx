@@ -20,7 +20,7 @@ function App() {
         </Routes>
       </main>
       <footer className="footer">
-        Rentar - TP Sistemas Distribuidos (UNLa)
+        Rentar - TP Sistemas Distribuidos (UNLa) - Grupo H
       </footer>
     </div>
   );
