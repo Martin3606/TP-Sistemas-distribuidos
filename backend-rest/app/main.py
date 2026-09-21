@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.database import engine
-from app.routers import clientes, vehiculos, reservas
+from app.routers import reservas, vehiculos, clientes
 
 app = FastAPI(title="Rentar - API REST", version="1.0.0")
 
@@ -29,6 +29,8 @@ app.include_router(vehiculos.router, prefix="/api")
 app.include_router(reservas.router)
 app.include_router(reservas.router, prefix="/api")
 
+app.include_router(vehiculos.router)
+app.include_router(clientes.router)
 
 @app.get("/health")
 def health_check():
