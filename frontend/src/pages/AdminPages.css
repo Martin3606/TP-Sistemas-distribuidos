@@ -1,0 +1,73 @@
+/* =========================================================
+   Rentar - Panel de Administrador (paleta azul #1d4ed8)
+   Espejo de ClientePages.css implementado por Martin
+   ========================================================= */
+
+.admin-panel{max-width:1180px;margin:auto;padding:2.25rem 1.5rem 4rem;color:#182238}
+.page-heading{margin-bottom:1.5rem}
+.page-heading h1,.admin-hero h1{margin:.2rem 0 .45rem;letter-spacing:-.035em;font-size:clamp(2rem,4vw,3rem)}
+.page-heading p:not(.eyebrow),.admin-hero p{color:#64748b;margin:0;max-width:640px;line-height:1.55}
+.eyebrow{color:#1d4ed8;font-size:.75rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin:0}
+
+.admin-hero{background:linear-gradient(115deg,#1d4ed8,#1e3a8a);color:#fff;border-radius:24px;padding:clamp(2rem,5vw,4rem);display:flex;align-items:end;justify-content:space-between;gap:2rem;box-shadow:0 18px 40px #1d4ed830}
+.admin-hero .eyebrow{color:#bfdbfe}
+.admin-hero p{color:#dbeafe}
+
+.button{border:0;border-radius:9px;padding:.78rem 1.05rem;background:#1d4ed8;color:#fff;cursor:pointer;font:inherit;font-weight:700;white-space:nowrap;transition:.18s}
+.button:hover{background:#1e40af;transform:translateY(-1px)}
+.button:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.button--light{background:#fff;color:#1d4ed8;text-decoration:none}
+.button--danger{background:#dc2626}
+.button--danger:hover{background:#b91c1c}
+.button--small{padding:.45rem .7rem;font-size:.8rem}
+
+.accesos-rapidos{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1.4rem}
+.acceso-rapido{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:1.3rem;text-decoration:none;color:#182238;transition:.18s}
+.acceso-rapido:hover{transform:translateY(-3px);box-shadow:0 12px 25px #1d4ed812}
+.acceso-rapido span{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;color:#1d4ed8;background:#dbeafe;font-size:1.3rem}
+.acceso-rapido strong{display:block;margin:.9rem 0 .25rem}
+.acceso-rapido small{color:#64748b;line-height:1.4}
+
+.form-admin{display:flex;flex-wrap:wrap;gap:1rem;align-items:end;margin:1.25rem 0;padding:1.25rem;background:#fff;border:1px solid #e5e7eb;border-radius:14px}
+.form-admin--search{background:#eff6ff;border-color:#bfdbfe}
+.form-admin__campo{display:flex;flex:1 1 170px;flex-direction:column;gap:.45rem}
+.form-admin__campo label{color:#475569;font-size:.82rem;font-weight:700}
+.form-admin__campo input,.form-admin__campo select{box-sizing:border-box;width:100%;padding:.72rem .78rem;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#182238;font:inherit}
+.form-admin__campo input:focus,.form-admin__campo select:focus{outline:3px solid #bfdbfe;border-color:#1d4ed8}
+
+.search-bar{display:flex;gap:.5rem;align-items:center;margin:1rem 0;padding:.6rem .8rem;background:#fff;border:1px solid #cbd5e1;border-radius:10px}
+.search-bar input{flex:1;border:0;outline:none;font:inherit;padding:.4rem;background:transparent}
+.search-bar__icon{color:#1d4ed8;font-size:1.1rem}
+
+.section-heading{margin-top:2.5rem}
+.section-heading h2{margin:0}
+.section-heading p{color:#64748b;margin:.3rem 0 0}
+
+.error-cliente,.success-cliente{padding:.85rem 1rem;border-radius:9px;margin:1rem 0}
+.error-cliente{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}
+.success-cliente{color:#047857;background:#ecfdf5;border:1px solid #a7f3d0}
+
+.empty-state{text-align:center;padding:3rem 1rem;border:1px dashed #cbd5e1;border-radius:14px;background:#fff}
+.empty-state span{display:grid;place-items:center;margin:auto;width:48px;height:48px;border-radius:50%;background:#eff6ff;color:#1d4ed8;font-size:1.5rem}
+.empty-state h2{margin:1rem 0 .25rem;font-size:1.1rem}
+.empty-state p{color:#64748b;margin:0}
+
+.tabla-contenedor{overflow-x:auto;border:1px solid #e5e7eb;border-radius:14px;background:#fff;margin-top:1.25rem}
+.tabla-cliente{min-width:760px;width:100%;border-collapse:collapse}
+.tabla-cliente th{padding:.8rem 1rem;color:#64748b;background:#f8fafc;text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+.tabla-cliente td{padding:.95rem 1rem;border-top:1px solid #e5e7eb;font-size:.9rem}
+.tabla-cliente td small{display:block;color:#64748b;margin-top:.2rem}
+
+.tag,.estado{display:inline-block;border-radius:999px;padding:.27rem .55rem;font-size:.7rem;font-weight:800;letter-spacing:.04em}
+.tag{color:#1d4ed8;background:#dbeafe}
+.estado--disponible{color:#047857;background:#ecfdf5}
+.estado--reservado{color:#b45309;background:#fef3c7}
+.estado--en_alquiler{color:#1d4ed8;background:#dbeafe}
+.estado--confirmada{color:#1d4ed8;background:#dbeafe}
+.estado--cancelada{color:#b91c1c;background:#fef2f2}
+.estado--finalizada{color:#047857;background:#ecfdf5}
+.estado--activo{color:#047857;background:#ecfdf5}
+.estado--inactivo{color:#64748b;background:#f1f5f9}
+
+@media(max-width:720px){.admin-panel{padding:1.4rem 1rem 3rem}.admin-hero{align-items:start;flex-direction:column;border-radius:18px}.accesos-rapidos{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:430px){.accesos-rapidos{grid-template-columns:1fr}.form-admin .button{width:100%}}

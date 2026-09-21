@@ -10,6 +10,8 @@ import Reservas from "./pages/Reservas.jsx";
 import Historial from "./pages/Historial.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import MiPerfil from "./pages/MiPerfil.jsx";
+import Catalogo from "./pages/Catalogo.jsx";
+import HistorialCliente from "./pages/HistorialCliente.jsx";
 
 function App() {
   return (
@@ -43,6 +45,12 @@ function App() {
           } />
           <Route path="/cliente/mis-reservas" element={
             <RutaProtegida rolesPermitidos={["CLIENTE"]}><MisReservas /></RutaProtegida>
+          } />
+          <Route path="/cliente/catalogo" element={
+            <RutaProtegida rolesPermitidos={["CLIENTE"]}><Catalogo /></RutaProtegida>
+          } />
+          <Route path="/cliente/historial" element={
+            <RutaProtegida rolesPermitidos={["CLIENTE"]}><HistorialCliente /></RutaProtegida>
           } />
           <Route path="/cliente/perfil" element={
             <RutaProtegida rolesPermitidos={["CLIENTE"]}><MiPerfil /></RutaProtegida>
