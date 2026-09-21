@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 
+
 function Navbar() {
   const { rol, logout } = useAuth();
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ function Navbar() {
     navigate("/login");
   }
 
-return (
+  return (
     <nav className="navbar">
       <div className="navbar-logo">Rentar</div>
 
@@ -43,3 +44,5 @@ return (
     </nav>
   );
 }
+
+export default Navbar;
