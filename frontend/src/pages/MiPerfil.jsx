@@ -1,11 +1,14 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "../auth/AuthContext.jsx";
+import "./ClientePages.css";
+const API_REST = "http://localhost:8000";
+const emptyProfile = { documento: "", nombre: "", apellido: "", email: "", telefono: "", fecha_nacimiento: "" };
 function MiPerfil() {
-  return (
-    <section>
-      <h1>Mi perfil</h1>
-      <p>Mis datos.</p>
-      {/* Nota: se conectará con GET /clientes/{id} */}
-    </section>
-  );
+  const { clienteId, setClienteId } = useAuth(); const [perfil, setPerfil] = useState(emptyProfile); const [mensaje, setMensaje] = useState(""); const [error, setError] = useState(""); const [cargando, setCargando] = useState(false);
+  async function cargarPerfil(id = clienteId) { if (!id) return; setCargando(true); setError(""); setMensaje(""); try { const respuesta = await fetch(`${API_REST}/api/clientes/${id}`); const datos = await respuesta.json(); if (!respuesta.ok) throw new Error(datos.detail || "No se pudo cargar el perfil"); setPerfil({ ...emptyProfile, ...datos, fecha_nacimiento: datos.fecha_nacimiento || "" }); } catch (err) { setError(err.message); } finally { setCargando(false); } }
+  useEffect(() => { cargarPerfil(); }, []);
+  async function guardar(evento) { evento.preventDefault(); if (!clienteId) return; setCargando(true); setError(""); setMensaje(""); try { const respuesta = await fetch(`${API_REST}/api/clientes/${clienteId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(perfil) }); const datos = await respuesta.json(); if (!respuesta.ok) throw new Error(datos.detail || "No se pudo actualizar el perfil"); setPerfil({ ...emptyProfile, ...datos, fecha_nacimiento: datos.fecha_nacimiento || "" }); setMensaje("Tus datos se actualizaron correctamente."); } catch (err) { setError(err.message); } finally { setCargando(false); } }
+  const fields = [["nombre", "Nombre", "text"], ["apellido", "Apellido", "text"], ["documento", "Documento", "text"], ["email", "Correo electrónico", "email"], ["telefono", "Teléfono", "tel"], ["fecha_nacimiento", "Fecha de nacimiento", "date"]];
+  return <section className="cliente-panel"><div className="page-heading"><p className="eyebrow">Cuenta personal</p><h1>Mi perfil</h1><p>Mantené actualizados tus datos de contacto.</p></div><div className="profile-id form-cliente form-cliente--compact"><div className="form-cliente__campo"><label htmlFor="perfilClienteId">Identificador de cliente</label><input id="perfilClienteId" type="number" value={clienteId || ""} onChange={(e) => setClienteId(e.target.value)} /></div><button className="button" type="button" onClick={() => cargarPerfil()} disabled={cargando || !clienteId}>Cargar datos</button></div>{error && <p className="error-cliente">{error}</p>}{mensaje && <p className="success-cliente">{mensaje}</p>}<form onSubmit={guardar} className="perfil-card"><div className="perfil-avatar">{perfil.nombre?.[0] || "?"}{perfil.apellido?.[0] || ""}</div><div className="perfil-card__header"><h2>Datos personales</h2><p>Completá los campos para actualizar la información registrada.</p></div><div className="perfil-grid">{fields.map(([campo, etiqueta, tipo]) => <div className="form-cliente__campo" key={campo}><label htmlFor={campo}>{etiqueta}</label><input id={campo} type={tipo} value={perfil[campo] || ""} onChange={(e) => setPerfil({ ...perfil, [campo]: e.target.value })} required={["nombre", "apellido", "documento", "email"].includes(campo)} /></div>)}</div><div className="perfil-card__footer"><button className="button" type="submit" disabled={cargando || !clienteId}>{cargando ? "Guardando..." : "Guardar cambios"}</button></div></form></section>;
 }
-
 export default MiPerfil;

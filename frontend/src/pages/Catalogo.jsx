@@ -61,10 +61,10 @@ function Catalogo() {
   }
 
   return (
-    <section>
-      <h1>Catálogo de Vehículos</h1>
+    <section className="cliente-panel">
+      <div className="page-heading"><div><p className="eyebrow">Encontrá tu vehículo</p><h1>Catálogo de vehículos</h1><p>Elegí las fechas de tu viaje para ver opciones disponibles.</p></div></div>
 
-      <form onSubmit={buscar} className="form-cliente">
+      <form onSubmit={buscar} className="form-cliente form-cliente--search">
         <div className="form-cliente__campo">
           <label htmlFor="fechaInicio">Desde</label>
           <input
@@ -85,7 +85,7 @@ function Catalogo() {
             required
           />
         </div>
-        <button type="submit" disabled={cargando}>
+        <button className="button" type="submit" disabled={cargando}>
           {cargando ? "Buscando..." : "Buscar disponibilidad"}
         </button>
       </form>
@@ -93,19 +93,15 @@ function Catalogo() {
       {error && <p className="error-cliente">{error}</p>}
 
       {buscado && !error && vehiculos.length === 0 && (
-        <p>No hay vehículos disponibles en ese período.</p>
+        <div className="empty-state"><span>⌕</span><h2>Sin vehículos disponibles</h2><p>Probá con otras fechas para encontrar más alternativas.</p></div>
       )}
 
       <div className="catalogo__grilla">
         {vehiculos.map((v) => (
           <div key={v.id} className="catalogo__tarjeta">
-            <h3>
-              {v.marca} {v.modelo}
-            </h3>
-            <p>
-              {v.anio} · {v.tipoVehiculo}
-            </p>
-            <p className="catalogo__precio">${v.precioDiario} / día</p>
+            <div className="vehiculo-icon">▱</div><span className="tag">{v.tipoVehiculo}</span>
+            <h2>{v.marca} {v.modelo}</h2><p className="vehiculo-meta">{v.anio} · {v.color || "Color no informado"} · {v.patente}</p>
+            <div className="catalogo__precio"><small>Desde</small>${v.precioDiario} <span>/ día</span></div>
           </div>
         ))}
       </div>
