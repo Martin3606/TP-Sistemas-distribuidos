@@ -1,0 +1,84 @@
+.form-cliente {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 24px;
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.form-cliente__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-cliente__campo input {
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.form-cliente button {
+  padding: 10px 18px;
+  background: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  height: fit-content;
+}
+
+.form-cliente button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-cliente {
+  color: #b91c1c;
+  background: #fee2e2;
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.tabla-cliente {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.tabla-cliente th,
+.tabla-cliente td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tabla-cliente button {
+  padding: 6px 12px;
+  background: #b91c1c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.catalogo__grilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.catalogo__tarjeta {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.catalogo__precio {
+  font-weight: bold;
+  color: #1e293b;
+}

@@ -29,7 +29,9 @@ function Navbar() {
         {rol === "CLIENTE" && (
           <>
             <li><NavLink to="/cliente" end>Inicio</NavLink></li>
+            <li><NavLink to="/cliente/catalogo">Catálogo</NavLink></li>
             <li><NavLink to="/cliente/mis-reservas">Mis reservas</NavLink></li>
+            <li><NavLink to="/cliente/historial">Historial</NavLink></li>
             <li><NavLink to="/cliente/perfil">Mi perfil</NavLink></li>
           </>
         )}
