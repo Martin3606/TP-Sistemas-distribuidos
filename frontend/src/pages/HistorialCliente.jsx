@@ -3,18 +3,22 @@ import "./ClientePages.css";
 
 const API_GRAPHQL = "http://localhost:8080/graphql";
 
-// TODO (equipo): este query es PROVISORIO. Confirmarlo con quien implemente
-// la consulta de historial en el backend GraphQL (nombre exacto, argumentos
-// y campos) y ajustar acá si cambia algo.
+// Query real, confirmada contra backend-graphql/schema.graphqls
 const QUERY_HISTORIAL = `
   query HistorialAlquileres($clienteId: ID!) {
     historialAlquileres(clienteId: $clienteId) {
       id
-      vehiculoId
+      vehiculo {
+        id
+        patente
+        marca
+        modelo
+      }
       fechaInicio
       fechaFin
       importeTotal
       estado
+      cantidadDias
     }
   }
 `;
@@ -52,10 +56,7 @@ function HistorialCliente() {
 
       setHistorial(datos.data.historialAlquileres);
     } catch (err) {
-      setError(
-        "No se pudo consultar el historial. ¿Ya está lista la query de " +
-          `historial en el backend GraphQL? (${err.message})`
-      );
+      setError(`No se pudo consultar el historial. (${err.message})`);
     } finally {
       setCargando(false);
     }
@@ -84,7 +85,7 @@ function HistorialCliente() {
       {error && <p className="error-cliente">{error}</p>}
 
       {buscado && !error && historial.length === 0 && (
-        <p>No tenés alquileres registrados.</p>
+        <p>No tenés alquileres finalizados o cancelados registrados.</p>
       )}
 
       {historial.length > 0 && (
@@ -95,6 +96,7 @@ function HistorialCliente() {
               <th>Vehículo</th>
               <th>Desde</th>
               <th>Hasta</th>
+              <th>Días</th>
               <th>Importe</th>
               <th>Estado</th>
             </tr>
@@ -103,9 +105,10 @@ function HistorialCliente() {
             {historial.map((h) => (
               <tr key={h.id}>
                 <td>{h.id}</td>
-                <td>{h.vehiculoId}</td>
+                <td>{h.vehiculo.marca} {h.vehiculo.modelo}</td>
                 <td>{new Date(h.fechaInicio).toLocaleString()}</td>
                 <td>{new Date(h.fechaFin).toLocaleString()}</td>
+                <td>{h.cantidadDias}</td>
                 <td>${h.importeTotal}</td>
                 <td>{h.estado}</td>
               </tr>

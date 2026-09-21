@@ -3,19 +3,19 @@ import "./ClientePages.css";
 
 const API_GRAPHQL = "http://localhost:8080/graphql";
 
-// TODO (equipo): este query es PROVISORIO. Hay que confirmarlo con quien
-// implemente la consulta de disponibilidad en el backend GraphQL (nombre
-// exacto de la query, argumentos y campos) y ajustar acá si cambia algo.
+// Query real, confirmada contra backend-graphql/schema.graphqls
 const QUERY_DISPONIBILIDAD = `
-  query VehiculosDisponibles($fechaInicio: String!, $fechaFin: String!) {
-    vehiculosDisponibles(fechaInicio: $fechaInicio, fechaFin: $fechaFin) {
+  query ConsultarDisponibilidad($filtro: FiltroDisponibilidadInput!) {
+    consultarDisponibilidad(filtro: $filtro) {
       id
       patente
       marca
       modelo
       anio
+      color
       tipoVehiculo
       precioDiario
+      estado
     }
   }
 `;
@@ -40,7 +40,9 @@ function Catalogo() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: QUERY_DISPONIBILIDAD,
-          variables: { fechaInicio, fechaFin },
+          variables: {
+            filtro: { fechaInicio, fechaFin },
+          },
         }),
       });
 
@@ -50,12 +52,9 @@ function Catalogo() {
         throw new Error(datos.errors[0].message);
       }
 
-      setVehiculos(datos.data.vehiculosDisponibles);
+      setVehiculos(datos.data.consultarDisponibilidad);
     } catch (err) {
-      setError(
-        "No se pudo consultar el catálogo. ¿Ya está lista la query de " +
-          `disponibilidad en el backend GraphQL? (${err.message})`
-      );
+      setError(`No se pudo consultar el catálogo. (${err.message})`);
     } finally {
       setCargando(false);
     }

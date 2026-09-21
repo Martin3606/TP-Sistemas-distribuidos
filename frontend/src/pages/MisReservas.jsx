@@ -4,18 +4,22 @@ import "./ClientePages.css";
 const API_REST = "http://localhost:8000";
 const API_GRAPHQL = "http://localhost:8080/graphql";
 
-// TODO (equipo): este query es PROVISORIO. Confirmarlo con quien implemente
-// la consulta de reservas del cliente en el backend GraphQL (nombre exacto,
-// argumentos y campos) y ajustar acá si cambia algo.
+// Query real, confirmada contra backend-graphql/schema.graphqls
 const QUERY_MIS_RESERVAS = `
-  query ReservasPorCliente($clienteId: ID!) {
-    reservasPorCliente(clienteId: $clienteId) {
+  query ConsultarReservas($filtro: FiltroReservaInput) {
+    consultarReservas(filtro: $filtro) {
       id
-      vehiculoId
+      vehiculo {
+        id
+        patente
+        marca
+        modelo
+      }
       fechaInicio
       fechaFin
       importeTotal
       estado
+      cantidadDias
     }
   }
 `;
@@ -32,7 +36,7 @@ function MisReservas() {
   const [cargando, setCargando] = useState(false);
   const [buscado, setBuscado] = useState(false);
 
-  // Trae las reservas del cliente vía GraphQL (consulta reservas)
+  // Trae las reservas del cliente vía GraphQL (consultarReservas)
   async function buscarMisReservas() {
     if (!clienteId) return;
 
@@ -46,7 +50,7 @@ function MisReservas() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: QUERY_MIS_RESERVAS,
-          variables: { clienteId },
+          variables: { filtro: { clienteId: Number(clienteId) } },
         }),
       });
 
@@ -56,12 +60,9 @@ function MisReservas() {
         throw new Error(datos.errors[0].message);
       }
 
-      setReservas(datos.data.reservasPorCliente);
+      setReservas(datos.data.consultarReservas);
     } catch (err) {
-      setError(
-        "No se pudo consultar tus reservas. ¿Ya está lista la query en " +
-          `el backend GraphQL? (${err.message})`
-      );
+      setError(`No se pudo consultar tus reservas. (${err.message})`);
     } finally {
       setCargando(false);
     }
@@ -91,17 +92,19 @@ function MisReservas() {
         throw new Error(datos.detail || "No se pudo crear la reserva");
       }
 
-      // La agregamos a la lista local (además de buscarMisReservas,
-      // por si la query de GraphQL todavía no está lista)
+      // La agregamos a la lista local con la MISMA forma que devuelve GraphQL
+      // (vehiculo como objeto anidado), aunque acá solo tenemos su id -
+      // se completa marca/modelo real al apretar "Ver mis reservas".
       setReservas((anteriores) => [
         ...anteriores,
         {
           id: datos.id,
-          vehiculoId: datos.vehiculo_id,
+          vehiculo: { id: datos.vehiculo_id, marca: "-", modelo: "-", patente: "-" },
           fechaInicio: datos.fecha_inicio,
           fechaFin: datos.fecha_fin,
           importeTotal: datos.importe_total,
           estado: datos.estado,
+          cantidadDias: null,
         },
       ]);
     } catch (err) {
@@ -205,6 +208,7 @@ function MisReservas() {
               <th>Vehículo</th>
               <th>Desde</th>
               <th>Hasta</th>
+              <th>Días</th>
               <th>Importe</th>
               <th>Estado</th>
               <th></th>
@@ -214,9 +218,10 @@ function MisReservas() {
             {reservas.map((r) => (
               <tr key={r.id}>
                 <td>{r.id}</td>
-                <td>{r.vehiculoId}</td>
+                <td>{r.vehiculo.marca} {r.vehiculo.modelo}</td>
                 <td>{new Date(r.fechaInicio).toLocaleString()}</td>
                 <td>{new Date(r.fechaFin).toLocaleString()}</td>
+                <td>{r.cantidadDias ?? "-"}</td>
                 <td>${r.importeTotal}</td>
                 <td>{r.estado}</td>
                 <td>
