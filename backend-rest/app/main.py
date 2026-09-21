@@ -2,12 +2,12 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from app.database import engine
-from app.routers import reservas
+from app.routers import reservas, vehiculos
 
 app = FastAPI(title="Rentar - API REST", version="1.0.0")
 
 app.include_router(reservas.router)
-
+app.include_router(vehiculos.router)
 
 @app.get("/health")
 def health_check():
