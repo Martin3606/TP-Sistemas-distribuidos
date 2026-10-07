@@ -22,7 +22,8 @@ function Home() {
     },
     {
       title: "Nueva Reserva",
-      description: "Consultá disponibilidad (GraphQL) y registrá alquileres (REST).",
+      description: "Consultá disponibilidad de vehículos y registrá alquileres.",
+
       icon: "📅",
       path: "/reservas",
       borderColor: "#28a745",

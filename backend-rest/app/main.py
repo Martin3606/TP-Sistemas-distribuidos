@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.database import engine
-from app.routers import reservas, vehiculos, clientes
+from app.routers import reservas, vehiculos, clientes, auth
 
 app = FastAPI(title="Rentar - API REST", version="1.0.0")
 
@@ -16,10 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. Registrar Ruteadores con compatibilidad dual (/api/... y /...)
+# Auth: mapea /auth/login y /api/auth/login
+app.include_router(auth.router)
+app.include_router(auth.router, prefix="/api")
+
 # Clientes: mapea /api/clientes y /clientes
-app.include_router(clientes.router, prefix="/api")
 app.include_router(clientes.router)
+app.include_router(clientes.router, prefix="/api")
 
 # Vehículos: mapea /vehiculos y /api/vehiculos
 app.include_router(vehiculos.router)
@@ -29,8 +32,6 @@ app.include_router(vehiculos.router, prefix="/api")
 app.include_router(reservas.router)
 app.include_router(reservas.router, prefix="/api")
 
-app.include_router(vehiculos.router)
-app.include_router(clientes.router)
 
 @app.get("/health")
 def health_check():

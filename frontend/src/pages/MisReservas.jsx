@@ -1,63 +1,190 @@
-import { useState } from "react";
-import { useAuth } from "../auth/AuthContext.jsx";
+import { useState, useEffect } from "react";
+import { fetchGraphQL, fetchREST } from "../services/api";
+import { useAuth } from "../auth/AuthContext";
 import "./ClientePages.css";
 
-const API_REST = "http://localhost:8000";
-const API_GRAPHQL = "http://localhost:8080/graphql";
-const QUERY_MIS_RESERVAS = `query ConsultarReservas($filtro: FiltroReservaInput) { consultarReservas(filtro: $filtro) { id vehiculo { id patente marca modelo } fechaInicio fechaFin importeTotal estado cantidadDias } }`;
-const formatDate = (date) => new Date(date).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+const QUERY_MIS_RESERVAS = `
+  query ConsultarReservas($filtro: FiltroReservaInput) {
+    consultarReservas(filtro: $filtro) {
+      id
+      vehiculo {
+        patente
+        marca
+        modelo
+        tipoVehiculo
+      }
+      fechaInicio
+      fechaFin
+      importeTotal
+      estado
+      cantidadDias
+    }
+  }
+`;
+
+const formatDate = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+};
 
 function MisReservas() {
-  const { clienteId, setClienteId } = useAuth();
-  const [vehiculoId, setVehiculoId] = useState("");
-  const [fechaInicio, setFechaInicio] = useState("");
-  const [fechaFin, setFechaFin] = useState("");
+  const { user, clienteId } = useAuth();
+
   const [reservas, setReservas] = useState([]);
-  const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
-  const [buscado, setBuscado] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  async function buscarMisReservas() {
-    if (!clienteId) return;
-    setError(""); setCargando(true); setBuscado(true);
-    try {
-      const respuesta = await fetch(API_GRAPHQL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: QUERY_MIS_RESERVAS, variables: { filtro: { clienteId: Number(clienteId) } } }) });
-      const datos = await respuesta.json();
-      if (datos.errors) throw new Error(datos.errors[0].message);
-      setReservas(datos.data.consultarReservas);
-    } catch (err) { setError(`No se pudo consultar tus reservas. (${err.message})`); } finally { setCargando(false); }
-  }
+  useEffect(() => {
+    cargarReservas();
+  }, []);
 
-  async function handleSubmit(evento) {
-    evento.preventDefault(); setError(""); setCargando(true);
-    try {
-      const respuesta = await fetch(`${API_REST}/reservas`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cliente_id: Number(clienteId), vehiculo_id: Number(vehiculoId), fecha_inicio: fechaInicio, fecha_fin: fechaFin }) });
-      const datos = await respuesta.json();
-      if (!respuesta.ok) throw new Error(datos.detail || "No se pudo crear la reserva");
-      setReservas((previas) => [...previas, { id: datos.id, vehiculo: { id: datos.vehiculo_id, marca: "Vehículo", modelo: `#${datos.vehiculo_id}`, patente: "" }, fechaInicio: datos.fecha_inicio, fechaFin: datos.fecha_fin, importeTotal: datos.importe_total, estado: datos.estado, cantidadDias: null }]);
-      setVehiculoId(""); setFechaInicio(""); setFechaFin(""); setBuscado(true);
-    } catch (err) { setError(err.message); } finally { setCargando(false); }
-  }
-
-  async function cancelarReserva(id) {
+  async function cargarReservas() {
+    setCargando(true);
     setError("");
+    setSuccess("");
+
     try {
-      const respuesta = await fetch(`${API_REST}/reservas/${id}/cancelar`, { method: "PATCH" });
-      const datos = await respuesta.json();
-      if (!respuesta.ok) throw new Error(datos.detail || "No se pudo cancelar la reserva");
-      setReservas((previas) => previas.map((reserva) => reserva.id === id ? { ...reserva, estado: datos.estado } : reserva));
-    } catch (err) { setError(err.message); }
+      // El backend de GraphQL restringe automáticamente por clienteId si es rol CLIENTE
+      const variables = clienteId ? { filtro: { clienteId: parseInt(clienteId, 10) } } : { filtro: {} };
+      const data = await fetchGraphQL(QUERY_MIS_RESERVAS, variables);
+      setReservas(data.consultarReservas || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCargando(false);
+    }
   }
 
-  return <section className="cliente-panel">
-    <div className="page-heading"><p className="eyebrow">Administrá tu viaje</p><h1>Mis reservas</h1><p>Consultá tus próximas reservas, creá una nueva o cancelala antes de su inicio.</p></div>
-    <div className="form-cliente form-cliente--compact"><div className="form-cliente__campo"><label htmlFor="clienteId">Identificador de cliente</label><input id="clienteId" type="number" value={clienteId || ""} onChange={(e) => setClienteId(e.target.value)} required /></div><button className="button" type="button" onClick={buscarMisReservas} disabled={cargando}>{cargando ? "Buscando..." : "Ver mis reservas"}</button></div>
-    <div className="section-heading"><h2>Nueva reserva</h2><p>Ingresá el vehículo elegido y las fechas de alquiler.</p></div>
-    <form onSubmit={handleSubmit} className="form-cliente form-cliente--booking"><div className="form-cliente__campo"><label htmlFor="vehiculoId">Identificador del vehículo</label><input id="vehiculoId" type="number" value={vehiculoId} onChange={(e) => setVehiculoId(e.target.value)} required /></div><div className="form-cliente__campo"><label htmlFor="fechaInicio">Desde</label><input id="fechaInicio" type="datetime-local" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} required /></div><div className="form-cliente__campo"><label htmlFor="fechaFin">Hasta</label><input id="fechaFin" type="datetime-local" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} required /></div><button className="button" type="submit" disabled={cargando || !clienteId}>{cargando ? "Reservando..." : "Confirmar reserva"}</button></form>
-    {error && <p className="error-cliente">{error}</p>}
-    {buscado && !error && reservas.length === 0 && <div className="empty-state"><span>▣</span><h2>Todavía no tenés reservas</h2><p>Consultá el catálogo y reservá el vehículo ideal para tu viaje.</p></div>}
-    {reservas.length > 0 && <div className="tabla-contenedor"><table className="tabla-cliente"><thead><tr><th>Reserva</th><th>Vehículo</th><th>Desde</th><th>Hasta</th><th>Días</th><th>Importe</th><th>Estado</th><th></th></tr></thead><tbody>{reservas.map((r) => <tr key={r.id}><td>#{r.id}</td><td><strong>{r.vehiculo.marca} {r.vehiculo.modelo}</strong><small>{r.vehiculo.patente}</small></td><td>{formatDate(r.fechaInicio)}</td><td>{formatDate(r.fechaFin)}</td><td>{r.cantidadDias ?? "–"}</td><td>${r.importeTotal}</td><td><span className={`estado estado--${r.estado.toLowerCase()}`}>{r.estado}</span></td><td>{r.estado === "CONFIRMADA" && <button className="button button--danger button--small" onClick={() => cancelarReserva(r.id)}>Cancelar</button>}</td></tr>)}</tbody></table></div>}
-  </section>;
+  async function handleCancelarReserva(reservaId) {
+    if (!window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) return;
+    setError("");
+    setSuccess("");
+
+    try {
+      try {
+        await fetchREST(`/reservas/${reservaId}/cancelar`, { method: "PATCH" });
+      } catch {
+        await fetchREST(`/api/reservas/${reservaId}/cancelar`, { method: "PATCH" });
+      }
+
+      setSuccess("La reserva ha sido cancelada correctamente.");
+      cargarReservas();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  return (
+    <section className="cliente-panel" style={{ padding: "1.5rem", maxWidth: "1200px", margin: "0 auto" }}>
+      <div className="page-heading" style={{ marginBottom: "1.5rem" }}>
+        <div>
+          <p className="eyebrow" style={{ color: "#38bdf8", fontWeight: "bold", textTransform: "uppercase", fontSize: "0.85rem" }}>
+            Administrá tus viajes
+          </p>
+          <h1 style={{ margin: "0.25rem 0", fontSize: "2rem", color: "#0f172a" }}>Mis Reservas</h1>
+          <p style={{ color: "#64748b" }}>Consultá tus próximas reservas registradas o cancelalas antes del inicio de tu alquiler.</p>
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ padding: "1rem", backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "8px", marginBottom: "1.5rem" }}>
+          ⚠️ {error}
+        </div>
+      )}
+
+      {success && (
+        <div style={{ padding: "1rem", backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", borderRadius: "8px", marginBottom: "1.5rem" }}>
+          ✅ {success}
+        </div>
+      )}
+
+      {cargando ? (
+        <p style={{ color: "#64748b" }}>Cargando tus reservas...</p>
+      ) : reservas.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "3rem", backgroundColor: "#f8fafc", borderRadius: "12px", border: "1px dashed #cbd5e1" }}>
+          <h2 style={{ color: "#475569", margin: "0 0 0.5rem 0" }}>Todavía no tenés reservas registradas</h2>
+          <p style={{ color: "#64748b", margin: 0 }}>Consultá el catálogo de vehículos y creá tu primera reserva.</p>
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto", width: "100%", WebkitOverflowScrolling: "touch" }}>
+          <table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Vehículo</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Patente</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Inicio</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Fin</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Días</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Importe Total</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Estado</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reservas.map((r) => (
+                <tr key={r.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ padding: "12px 16px", fontWeight: "bold", color: "#0f172a" }}>
+                    {r.vehiculo ? `${r.vehiculo.marca} ${r.vehiculo.modelo}` : "Vehículo"}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#64748b" }}>
+                    {r.vehiculo?.patente || "-"}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#334155" }}>
+                    {formatDate(r.fechaInicio)}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#334155" }}>
+                    {formatDate(r.fechaFin)}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#334155" }}>
+                    {r.cantidadDias ?? "-"}
+                  </td>
+                  <td style={{ padding: "12px 16px", fontWeight: "bold", color: "#0f172a" }}>
+                    ${r.importeTotal}
+                  </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    <span
+                      style={{
+                        padding: "0.25rem 0.65rem",
+                        borderRadius: "12px",
+                        fontSize: "0.75rem",
+                        fontWeight: "bold",
+                        backgroundColor: r.estado === "CONFIRMADA" ? "#dcfce7" : r.estado === "CANCELADA" ? "#fee2e2" : "#e0f2fe",
+                        color: r.estado === "CONFIRMADA" ? "#15803d" : r.estado === "CANCELADA" ? "#b91c1c" : "#0369a1",
+                      }}
+                    >
+                      {r.estado}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
+                    {r.estado === "CONFIRMADA" ? (
+                      <button
+                        onClick={() => handleCancelarReserva(r.id)}
+                        style={{
+                          padding: "0.4rem 0.85rem",
+                          backgroundColor: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: "6px",
+                          fontWeight: "bold",
+                          fontSize: "0.8rem",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Cancelar Reserva
+                      </button>
+                    ) : (
+                      <span style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Sin acciones</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
 }
 
 export default MisReservas;

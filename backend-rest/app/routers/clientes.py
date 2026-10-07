@@ -5,12 +5,17 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.cliente import Cliente
 from app.schemas.cliente import ClienteCreate, ClienteUpdate, ClienteOut
+from app.auth.jwt import require_admin
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
 
 @router.post("", response_model=ClienteOut, status_code=status.HTTP_201_CREATED)
-def crear_cliente(cliente_in: ClienteCreate, db: Session = Depends(get_db)):
+def crear_cliente(
+    cliente_in: ClienteCreate,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
+):
     """
     [Requerimiento 3 - ABM Clientes] Alta de cliente.
     Valida que el documento y el email sean únicos en el sistema.
@@ -46,7 +51,8 @@ def crear_cliente(cliente_in: ClienteCreate, db: Session = Depends(get_db)):
 @router.get("", response_model=List[ClienteOut])
 def listar_clientes(
     solo_activos: bool = Query(False, description="Si es True, filtra únicamente los clientes activos"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
 ):
     """
     [Requerimiento 3 - ABM Clientes] Consulta / Listado de clientes.
@@ -58,7 +64,11 @@ def listar_clientes(
 
 
 @router.get("/{cliente_id}", response_model=ClienteOut)
-def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
+def obtener_cliente(
+    cliente_id: int,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
+):
     """
     [Requerimiento 3 - ABM Clientes] Consulta de un cliente por su ID.
     """
@@ -72,7 +82,12 @@ def obtener_cliente(cliente_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{cliente_id}", response_model=ClienteOut)
-def actualizar_cliente(cliente_id: int, cliente_in: ClienteUpdate, db: Session = Depends(get_db)):
+def actualizar_cliente(
+    cliente_id: int,
+    cliente_in: ClienteUpdate,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
+):
     """
     [Requerimiento 3 - ABM Clientes] Modificación de datos de un cliente.
     """
@@ -116,7 +131,11 @@ def actualizar_cliente(cliente_id: int, cliente_in: ClienteUpdate, db: Session =
 
 
 @router.delete("/{cliente_id}", response_model=ClienteOut)
-def baja_logica_cliente(cliente_id: int, db: Session = Depends(get_db)):
+def baja_logica_cliente(
+    cliente_id: int,
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
+):
     """
     [Requerimiento 3 - ABM Clientes] Baja lógica de cliente (`activo = False`).
     """
@@ -131,3 +150,4 @@ def baja_logica_cliente(cliente_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(cliente)
     return cliente
+

@@ -1,41 +1,66 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { fetchREST } from "../services/api";
 
 const AuthContext = createContext(null);
 
-const STORAGE_KEY = "rentar_rol";
-const CLIENTE_ID_KEY = "rentar_cliente_id";
+const TOKEN_KEY = "rentar_token";
+const USER_KEY = "rentar_usuario";
 
 export function AuthProvider({ children }) {
-  // cuando el backend tenga /login, guardar tambien el token JWT
-  const [rol, setRol] = useState(() => localStorage.getItem(STORAGE_KEY));
-  const [clienteId, setClienteId] = useState(() => localStorage.getItem(CLIENTE_ID_KEY));
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem(USER_KEY);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const rol = user?.rol || null;
+  const clienteId = user?.cliente_id || null;
 
   useEffect(() => {
-    if (rol) localStorage.setItem(STORAGE_KEY, rol);
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [rol]);
+    if (token) {
+      localStorage.setItem(TOKEN_KEY, token);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }, [token]);
 
   useEffect(() => {
-    if (clienteId) localStorage.setItem(CLIENTE_ID_KEY, clienteId);
-    else localStorage.removeItem(CLIENTE_ID_KEY);
-  }, [clienteId]);
+    if (user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_KEY);
+    }
+  }, [user]);
 
-  function loginAdmin() {
-    setRol("ADMIN");
-  }
+  async function login(email, password) {
+    const res = await fetchREST("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
 
-  function loginCliente() {
-    // TODO: id del cliente logueado
-    setRol("CLIENTE");
+    setToken(res.access_token);
+    setUser(res.user);
+    return res.user;
   }
 
   function logout() {
-    setRol(null);
-    setClienteId(null);
+    setToken(null);
+    setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ rol, clienteId, setClienteId, loginAdmin, loginCliente, logout }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        rol,
+        clienteId,
+        login,
+        logout,
+        isAuthenticated: !!token && !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

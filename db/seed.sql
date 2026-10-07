@@ -15,3 +15,10 @@ VALUES
   ('AB123CD', 'Toyota', 'Corolla', 2022, 'Gris', 'SEDAN', 15000.00, 'DISPONIBLE', TRUE),
   ('EF456GH', 'Ford', 'Ranger', 2021, 'Blanco', 'PICKUP', 22000.00, 'DISPONIBLE', FALSE);
   -- el segundo vehículo queda INACTIVO a propósito, para probar esa validación
+
+-- Usuarios iniciales para Autenticación (password admin: admin123, password cliente: cliente123)
+INSERT INTO usuario (email, password_hash, rol, cliente_id)
+VALUES
+  ('admin@rentar.com', '$2b$12$m7NC0aA2o9TRN2Pgk3mTBuWS1YXLY2x4FS/2KpqqfUFB6wXYvOzIe', 'ADMIN', NULL),
+  ('juan.perez@mail.com', '$2b$12$Im66T/aCL4/v0egDINziDe6BR8i/qjFqzeJLeHEa3XvSXVQbn/CrG', 'CLIENTE', 1);
+

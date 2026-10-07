@@ -291,7 +291,8 @@ function Vehiculos() {
 
   return (
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
-      <h1>Gestión de Flota de Vehículos (REST)</h1>
+      <h1>Gestión de Flota de Vehículos</h1>
+
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}
       {success && <div style={{ color: "#155724", backgroundColor: "#d4edda", borderColor: "#c3e6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>✅ {success}</div>}
@@ -487,7 +488,6 @@ function Vehiculos() {
           <table style={{ width: "100%", minWidth: "650px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
-                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>ID</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Patente</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Marca / Modelo / Año</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Tipo</th>
@@ -499,15 +499,15 @@ function Vehiculos() {
             </thead>
             <tbody>
               {vehiculos.length === 0 ? (
-                <tr><td colSpan="8" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay vehículos registrados.</td></tr>
+                <tr><td colSpan="7" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay vehículos registrados.</td></tr>
               ) : (
                 vehiculos.map((v) => (
-                  <tr key={v.id} style={{ backgroundColor: v.activo ? "#ffffff" : "#fff5f5" }}>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.id}</td>
+                  <tr key={v.patente} style={{ backgroundColor: v.activo ? "#ffffff" : "#fff5f5" }}>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{v.patente}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.marca} {v.modelo} ({v.anio})</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.tipo_vehiculo}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>${v.precio_diario}</td>
+
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
                         style={{

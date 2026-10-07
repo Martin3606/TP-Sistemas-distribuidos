@@ -19,7 +19,7 @@ const getInitialReservaDraft = () => {
       if (parsed && typeof parsed === "object") {
         return {
           filtros: parsed.filtros ? { ...INITIAL_FILTROS_RESERVA, ...parsed.filtros } : INITIAL_FILTROS_RESERVA,
-          clienteId: parsed.clienteId || "",
+          clienteDocumento: parsed.clienteDocumento || "",
           vehiculoSeleccionado: parsed.vehiculoSeleccionado || null,
         };
       }
@@ -29,7 +29,7 @@ const getInitialReservaDraft = () => {
   }
   return {
     filtros: INITIAL_FILTROS_RESERVA,
-    clienteId: "",
+    clienteDocumento: "",
     vehiculoSeleccionado: null,
   };
 };
@@ -37,7 +37,8 @@ const getInitialReservaDraft = () => {
 function Reservas() {
   const initialDraft = getInitialReservaDraft();
   const [filtros, setFiltros] = useState(initialDraft.filtros);
-  const [clienteId, setClienteId] = useState(initialDraft.clienteId);
+  const [clienteDocumento, setClienteDocumento] = useState(initialDraft.clienteDocumento);
+  const [clientesLista, setClientesLista] = useState([]);
   const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(initialDraft.vehiculoSeleccionado);
   const [disponibles, setDisponibles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,12 +47,30 @@ function Reservas() {
   const [reservaLoading, setReservaLoading] = useState(false);
 
   useEffect(() => {
+    cargarClientes();
+  }, []);
+
+  const cargarClientes = async () => {
     try {
-      const hasContent = filtros.fechaInicio || filtros.fechaFin || filtros.tipoVehiculo || filtros.marca || clienteId || vehiculoSeleccionado;
+      let data;
+      try {
+        data = await fetchREST("/api/clientes?solo_activos=true");
+      } catch {
+        data = await fetchREST("/clientes?solo_activos=true");
+      }
+      setClientesLista(data || []);
+    } catch (err) {
+      console.error("Error al cargar la lista de clientes:", err);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const hasContent = filtros.fechaInicio || filtros.fechaFin || filtros.tipoVehiculo || filtros.marca || clienteDocumento || vehiculoSeleccionado;
       if (hasContent) {
         sessionStorage.setItem(
           DRAFT_KEY_RESERVAS,
-          JSON.stringify({ filtros, clienteId, vehiculoSeleccionado })
+          JSON.stringify({ filtros, clienteDocumento, vehiculoSeleccionado })
         );
       } else {
         sessionStorage.removeItem(DRAFT_KEY_RESERVAS);
@@ -59,7 +78,7 @@ function Reservas() {
     } catch (e) {
       console.error("Error guardando borrador de reservas:", e);
     }
-  }, [filtros, clienteId, vehiculoSeleccionado]);
+  }, [filtros, clienteDocumento, vehiculoSeleccionado]);
 
   const handleFiltroChange = (e) => {
     setFiltros({ ...filtros, [e.target.name]: e.target.value });
@@ -140,8 +159,8 @@ function Reservas() {
 
   const handleCrearReserva = async (e) => {
     e.preventDefault();
-    if (!clienteId || !vehiculoSeleccionado) {
-      setError("Debes ingresar el ID del cliente.");
+    if (!clienteDocumento || !vehiculoSeleccionado) {
+      setError("Debes seleccionar o ingresar el DNI del cliente.");
       return;
     }
 
@@ -154,8 +173,8 @@ function Reservas() {
     setSuccess("");
 
     const payload = {
-      cliente_id: parseInt(clienteId, 10),
-      vehiculo_id: parseInt(vehiculoSeleccionado.id, 10),
+      documento: clienteDocumento.trim(),
+      patente: vehiculoSeleccionado.patente,
       fecha_inicio: filtros.fechaInicio.includes("T") ? filtros.fechaInicio : `${filtros.fechaInicio}T00:00:00`,
       fecha_fin: filtros.fechaFin.includes("T") ? filtros.fechaFin : `${filtros.fechaFin}T23:59:59`,
     };
@@ -176,9 +195,9 @@ function Reservas() {
         });
       }
 
-      setSuccess(`¡Reserva CONFIRMADA con éxito! ID de Reserva: ${reservaCreada.id} - Importe Total: $${reservaCreada.importe_total}`);
+      setSuccess(`¡Reserva CONFIRMADA con éxito! Vehículo Patente: ${vehiculoSeleccionado.patente} - Importe Total: $${reservaCreada.importe_total}`);
       setVehiculoSeleccionado(null);
-      setClienteId("");
+      setClienteDocumento("");
       try {
         sessionStorage.removeItem(DRAFT_KEY_RESERVAS);
       } catch {
@@ -194,16 +213,17 @@ function Reservas() {
 
   return (
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
-      <h1>Buscador de Disponibilidad y Reservas</h1>
+      <h1>Buscador de Disponibilidad y Gestión de Reservas</h1>
       <p style={{ color: "#555" }}>
-        Consultá la flota disponible enviando la consulta GraphQL a Spring Boot (`:8080/graphql`) y luego confirmá el alta mediante la API REST (`:8000/reservas`).
+        Consulta la flota disponible y confirma la reserva asignando el cliente por su DNI.
       </p>
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}
       {success && <div style={{ color: "#155724", backgroundColor: "#d4edda", borderColor: "#c3e6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>✅ {success}</div>}
 
       <form onSubmit={buscarDisponibilidad} style={{ backgroundColor: "#ffffff", padding: "20px 15px", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", border: "none", marginBottom: "25px", width: "100%", boxSizing: "border-box" }}>
-        <h3 style={{ marginTop: 0, color: "#333" }}>1. Consultar Vehículos Disponibles (GraphQL)</h3>
+        <h3 style={{ marginTop: 0, color: "#333" }}>1. Consultar Vehículos Disponibles</h3>
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Fecha Inicio *</label>
@@ -213,7 +233,7 @@ function Reservas() {
               value={filtros.fechaInicio}
               onChange={handleFiltroChange}
               required
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s" }}
+              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em" }}
             />
           </div>
           <div>
@@ -224,7 +244,7 @@ function Reservas() {
               value={filtros.fechaFin}
               onChange={handleFiltroChange}
               required
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s" }}
+              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em" }}
             />
           </div>
           <div>
@@ -233,7 +253,7 @@ function Reservas() {
               name="tipoVehiculo"
               value={filtros.tipoVehiculo}
               onChange={handleFiltroChange}
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s" }}
+              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em" }}
             >
               {TIPOS_VEHICULO.map((t) => (
                 <option key={t} value={t}>{t === "" ? "Todos los tipos" : t}</option>
@@ -248,7 +268,7 @@ function Reservas() {
               value={filtros.marca}
               onChange={handleFiltroChange}
               placeholder="Ej: Toyota"
-              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s" }}
+              style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em" }}
             />
           </div>
         </div>
@@ -272,21 +292,31 @@ function Reservas() {
 
       {vehiculoSeleccionado && (
         <form onSubmit={handleCrearReserva} style={{ backgroundColor: "#ffffff", padding: "20px 15px", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", border: "1px solid #ffeba8", marginBottom: "25px", width: "100%", boxSizing: "border-box" }}>
-          <h3 style={{ marginTop: 0, color: "#856404" }}>2. Confirmar Reserva (REST FastAPI)</h3>
+          <h3 style={{ marginTop: 0, color: "#856404" }}>2. Confirmar Reserva para un Cliente</h3>
+
           <p style={{ color: "#333" }}>
             Vehículo seleccionado: <strong>{vehiculoSeleccionado.marca} {vehiculoSeleccionado.modelo} ({vehiculoSeleccionado.patente})</strong> - Precio diario: <strong>${vehiculoSeleccionado.precioDiario}</strong>
           </p>
-          <div style={{ maxWidth: "300px", marginBottom: "15px", width: "100%" }}>
-            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>ID del Cliente *</label>
-            <input
-              type="number"
-              value={clienteId}
-              onChange={(e) => setClienteId(e.target.value)}
-              placeholder="Ej: 1"
+
+          <div style={{ maxWidth: "400px", marginBottom: "15px", width: "100%" }}>
+            <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>
+              Cliente (Seleccionar por Nombre / DNI) *
+            </label>
+            <select
+              value={clienteDocumento}
+              onChange={(e) => setClienteDocumento(e.target.value)}
               required
               style={{ width: "100%", padding: "10px", border: "1px solid #ccc", borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em" }}
-            />
+            >
+              <option value="">-- Seleccionar Cliente --</option>
+              {clientesLista.map((c) => (
+                <option key={c.documento} value={c.documento}>
+                  {c.nombre} {c.apellido} — DNI: {c.documento}
+                </option>
+              ))}
+            </select>
           </div>
+
           <button
             type="submit"
             disabled={reservaLoading}
@@ -328,9 +358,9 @@ function Reservas() {
         <table style={{ width: "100%", minWidth: "600px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
           <thead>
             <tr style={{ backgroundColor: "#f8f9fa" }}>
-              <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>ID</th>
               <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Patente</th>
               <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Marca / Modelo / Año</th>
+              <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Color</th>
               <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Tipo</th>
               <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Precio Diario</th>
               <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Acción</th>
@@ -341,10 +371,10 @@ function Reservas() {
               <tr><td colSpan="6" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>Realizá una búsqueda para ver los vehículos disponibles.</td></tr>
             ) : (
               disponibles.map((v) => (
-                <tr key={v.id}>
-                  <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.id}</td>
+                <tr key={v.patente}>
                   <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{v.patente}</td>
                   <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.marca} {v.modelo} ({v.anio})</td>
+                  <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.color || "-"}</td>
                   <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.tipoVehiculo || v.tipo_vehiculo}</td>
                   <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>${v.precioDiario || v.precio_diario}</td>
                   <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", whiteSpace: "nowrap" }}>

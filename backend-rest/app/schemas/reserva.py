@@ -1,14 +1,16 @@
 from datetime import datetime
 from decimal import Decimal
-
+from typing import Optional
 from pydantic import BaseModel, field_validator
 
 
 class ReservaCreate(BaseModel):
     """Lo que el cliente HTTP debe enviar para crear una reserva."""
 
-    cliente_id: int
-    vehiculo_id: int
+    documento: Optional[str] = None   # DNI del cliente
+    patente: Optional[str] = None     # Patente del vehículo
+    cliente_id: Optional[int] = None  # ID alternativo
+    vehiculo_id: Optional[int] = None # ID alternativo
     fecha_inicio: datetime
     fecha_fin: datetime
 
@@ -36,4 +38,4 @@ class ReservaOut(BaseModel):
     estado: str
 
     class Config:
-        from_attributes = True  # permite construir esto directo desde el modelo ORM
+        from_attributes = True

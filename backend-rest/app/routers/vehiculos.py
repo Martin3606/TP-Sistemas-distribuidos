@@ -5,16 +5,18 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.models.vehiculo import Vehiculo
 from app.schemas.vehiculo import VehiculoCreate, VehiculoUpdate
+from app.auth.jwt import require_admin, get_current_user
 
 
 router = APIRouter(prefix="/vehiculos", tags=["Vehículos"])
 
 
-# Da de alta un nuevo vehículo
+# Da de alta un nuevo vehículo (solo Admin)
 @router.post("", status_code=201)
 def crear_vehiculo(
     vehiculo: VehiculoCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
 ):
     nuevo_vehiculo = Vehiculo(**vehiculo.model_dump())
 
@@ -37,12 +39,13 @@ def crear_vehiculo(
     return nuevo_vehiculo
 
 
-# Modifica los datos de un vehículo existente por su ID
+# Modifica los datos de un vehículo existente por su ID (solo Admin)
 @router.put("/{vehiculo_id}")
 def modificar_vehiculo(
     vehiculo_id: int,
     vehiculo: VehiculoUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
 ):
     vehiculo_db = db.get(Vehiculo, vehiculo_id)
 
@@ -61,11 +64,12 @@ def modificar_vehiculo(
     return vehiculo_db
 
 
-# Da de baja lógicamente un vehículo
+# Da de baja lógicamente un vehículo (solo Admin)
 @router.delete("/{vehiculo_id}")
 def eliminar_vehiculo(
     vehiculo_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: dict = Depends(require_admin)
 ):
     vehiculo_db = db.get(Vehiculo, vehiculo_id)
 
@@ -85,5 +89,9 @@ def eliminar_vehiculo(
 
 # Consulta todos los vehículos registrados
 @router.get("")
-def consultar_vehiculos(db: Session = Depends(get_db)):
+def consultar_vehiculos(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
     return db.query(Vehiculo).all()
+

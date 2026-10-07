@@ -2,23 +2,45 @@ import { useState, useEffect } from "react";
 import { fetchGraphQL, fetchREST } from "../services/api";
 
 function Historial() {
-  const [clienteIdInput, setClienteIdInput] = useState("1");
+  const [clientesLista, setClientesLista] = useState([]);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState("");
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    cargarHistorial();
+    cargarClientes();
   }, []);
 
-  const cargarHistorial = async (e) => {
-    if (e) e.preventDefault();
-    if (!clienteIdInput) {
-      setError("Debes ingresar un ID de cliente para consultar.");
-      return;
+  const cargarClientes = async () => {
+    try {
+      let data;
+      try {
+        data = await fetchREST("/api/clientes");
+      } catch {
+        data = await fetchREST("/clientes");
+      }
+      setClientesLista(data || []);
+      if (data && data.length > 0) {
+        setClienteSeleccionado(data[0].documento);
+        cargarHistorialPorDocumento(data[0].id);
+      }
+    } catch (err) {
+      console.error("Error al cargar la lista de clientes:", err);
     }
+  };
 
+  const handleClienteChange = (e) => {
+    const doc = e.target.value;
+    setClienteSeleccionado(doc);
+    const clienteObj = clientesLista.find((c) => c.documento === doc);
+    if (clienteObj) {
+      cargarHistorialPorDocumento(clienteObj.id);
+    }
+  };
+
+  const cargarHistorialPorDocumento = async (clienteId) => {
     setLoading(true);
     setError("");
     setSuccess("");
@@ -42,7 +64,7 @@ function Historial() {
     `;
 
     try {
-      const data = await fetchGraphQL(query, { clienteId: clienteIdInput });
+      const data = await fetchGraphQL(query, { clienteId: clienteId.toString() });
       setReservas(data.historialAlquileres || []);
     } catch (err) {
       setError(err.message);
@@ -52,7 +74,7 @@ function Historial() {
   };
 
   const handleCancelarReserva = async (reservaId) => {
-    if (!window.confirm(`¿Seguro que deseas cancelar la reserva ID ${reservaId}?`)) return;
+    if (!window.confirm("¿Seguro que deseas cancelar esta reserva?")) return;
     setError("");
     setSuccess("");
 
@@ -63,8 +85,9 @@ function Historial() {
         await fetchREST(`/api/reservas/${reservaId}/cancelar`, { method: "PATCH" });
       }
 
-      setSuccess(`Reserva ID ${reservaId} cancelada correctamente.`);
-      cargarHistorial();
+      setSuccess("Reserva cancelada correctamente.");
+      const clienteObj = clientesLista.find((c) => c.documento === clienteSeleccionado);
+      if (clienteObj) cargarHistorialPorDocumento(clienteObj.id);
     } catch (err) {
       setError(err.message);
     }
@@ -72,40 +95,30 @@ function Historial() {
 
   return (
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
-      <h1>Historial de Alquileres y Cancelaciones</h1>
-      <p style={{ color: "#666" }}>
-        Consulta de historial vía <strong>GraphQL (Spring Boot :8080)</strong> y cancelación vía <strong>REST (FastAPI :8000)</strong>.
+      <h1>Historial General de Alquileres</h1>
+      <p style={{ color: "#555" }}>
+        Consulta el historial de alquileres por cliente mediante GraphQL (`:8080/graphql`).
       </p>
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}
       {success && <div style={{ color: "#155724", backgroundColor: "#d4edda", borderColor: "#c3e6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>✅ {success}</div>}
 
-      <form onSubmit={cargarHistorial} style={{ backgroundColor: "#ffffff", padding: "20px 15px", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", border: "none", marginBottom: "25px", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", width: "100%", boxSizing: "border-box" }}>
-        <label style={{ fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>ID de Cliente:</label>
-        <input
-          type="number"
-          value={clienteIdInput}
-          onChange={(e) => setClienteIdInput(e.target.value)}
-          placeholder="Ej: 1"
-          required
-          style={{ padding: "10px", width: "140px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "0.95em" }}
-        />
-        <button
-          type="submit"
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#007bff",
-            color: "#fff",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: "bold",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            cursor: "pointer",
-          }}
+      <div style={{ backgroundColor: "#ffffff", padding: "20px 15px", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", border: "none", marginBottom: "25px", width: "100%", boxSizing: "border-box" }}>
+        <label style={{ fontWeight: "bold", fontSize: "0.9em", color: "#333", display: "block", marginBottom: "8px" }}>
+          Seleccionar Cliente (por Nombre / DNI):
+        </label>
+        <select
+          value={clienteSeleccionado}
+          onChange={handleClienteChange}
+          style={{ padding: "10px", width: "100%", maxWidth: "400px", border: "1px solid #ccc", borderRadius: "4px", fontSize: "0.95em" }}
         >
-          Consultar Historial (GraphQL)
-        </button>
-      </form>
+          {clientesLista.map((c) => (
+            <option key={c.documento} value={c.documento}>
+              {c.nombre} {c.apellido} — DNI: {c.documento}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {loading ? (
         <p>Cargando historial...</p>
@@ -114,7 +127,6 @@ function Historial() {
           <table style={{ width: "100%", minWidth: "650px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
-                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Reserva ID</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Vehículo</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Patente</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Inicio</th>
@@ -127,34 +139,41 @@ function Historial() {
             </thead>
             <tbody>
               {reservas.length === 0 ? (
-                <tr><td colSpan="9" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No se encontraron reservas registradas para este cliente.</td></tr>
+                <tr><td colSpan="8" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No se encontraron reservas registradas para este cliente.</td></tr>
               ) : (
                 reservas.map((r) => (
                   <tr key={r.id}>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{r.id}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{r.vehiculo ? `${r.vehiculo.marca} ${r.vehiculo.modelo}` : "-"}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{r.vehiculo ? r.vehiculo.patente : "-"}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{r.fechaInicio}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{r.fechaFin}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>
+                      {r.vehiculo ? `${r.vehiculo.marca} ${r.vehiculo.modelo}` : "-"}
+                    </td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
+                      {r.vehiculo ? r.vehiculo.patente : "-"}
+                    </td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
+                      {r.fechaInicio ? r.fechaInicio.replace("T", " ").substring(0, 16) : "-"}
+                    </td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
+                      {r.fechaFin ? r.fechaFin.replace("T", " ").substring(0, 16) : "-"}
+                    </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{r.cantidadDias}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>${r.importeTotal}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>${r.importeTotal}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
                         style={{
                           padding: "4px 10px",
                           borderRadius: "12px",
-                          color: r.estado === "CONFIRMADA" ? "#004085" : r.estado === "CANCELADA" ? "#721c24" : "#155724",
-                          backgroundColor: r.estado === "CONFIRMADA" ? "#cce5ff" : r.estado === "CANCELADA" ? "#f8d7da" : "#d4edda",
                           fontSize: "12px",
                           fontWeight: "bold",
                           display: "inline-block",
+                          color: r.estado === "CONFIRMADA" ? "#155724" : r.estado === "CANCELADA" ? "#721c24" : "#0c5460",
+                          backgroundColor: r.estado === "CONFIRMADA" ? "#d4edda" : r.estado === "CANCELADA" ? "#f8d7da" : "#d1ecf1",
                         }}
                       >
                         {r.estado}
                       </span>
                     </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", whiteSpace: "nowrap" }}>
-                      {r.estado === "CONFIRMADA" && (
+                      {r.estado === "CONFIRMADA" ? (
                         <button
                           onClick={() => handleCancelarReserva(r.id)}
                           style={{
@@ -164,12 +183,13 @@ function Historial() {
                             border: "none",
                             borderRadius: "6px",
                             fontWeight: "bold",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                             cursor: "pointer",
                           }}
                         >
-                          Cancelar
+                          Cancelar Reserva
                         </button>
+                      ) : (
+                        <span style={{ color: "#999", fontSize: "0.9em" }}>Sin acciones</span>
                       )}
                     </td>
                   </tr>

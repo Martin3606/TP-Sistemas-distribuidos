@@ -250,7 +250,8 @@ function Clientes() {
 
   return (
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
-      <h1>Gestión de Clientes (REST)</h1>
+      <h1>Gestión de Clientes</h1>
+
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}
       {success && <div style={{ color: "#155724", backgroundColor: "#d4edda", borderColor: "#c3e6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>✅ {success}</div>}
@@ -419,8 +420,7 @@ function Clientes() {
           <table style={{ width: "100%", minWidth: "600px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
-                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>ID</th>
-                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Documento</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Documento (DNI)</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Nombre y Apellido</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Email</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Teléfono</th>
@@ -430,14 +430,14 @@ function Clientes() {
             </thead>
             <tbody>
               {clientes.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay clientes registrados.</td></tr>
+                <tr><td colSpan="6" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay clientes registrados.</td></tr>
               ) : (
                 clientes.map((c) => (
-                  <tr key={c.id} style={{ backgroundColor: c.activo ? "#ffffff" : "#fff5f5" }}>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.id}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.documento}</td>
+                  <tr key={c.documento} style={{ backgroundColor: c.activo ? "#ffffff" : "#fff5f5" }}>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{c.documento}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.nombre} {c.apellido}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.email}</td>
+
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.telefono || "-"}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
