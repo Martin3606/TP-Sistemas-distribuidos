@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package rentar.vehicle.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service VehicleService {
+  rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
+  rpc GetVehicle(GetVehicleRequest) returns (VehicleResponse);
+
+  rpc CheckAvailability(CheckAvailabilityRequest)
+      returns (ListVehiclesResponse);
+
+  rpc CreateVehicle(CreateVehicleRequest) returns (VehicleResponse);
+  rpc UpdateVehicle(UpdateVehicleRequest) returns (VehicleResponse);
+  rpc DeactivateVehicle(DeactivateVehicleRequest) returns (VehicleResponse);
+
+  rpc UpdateVehicleStatus(UpdateVehicleStatusRequest)
+      returns (VehicleResponse);
+}
+
+enum VehicleType {
+  VEHICLE_TYPE_UNSPECIFIED = 0;
+  SEDAN = 1;
+  SUV = 2;
+  PICKUP = 3;
+  COUPE = 4;
+  HATCHBACK = 5;
+}
+
+enum VehicleStatus {
+  VEHICLE_STATUS_UNSPECIFIED = 0;
+  DISPONIBLE = 1;
+  RESERVADO = 2;
+  EN_ALQUILER = 3;
+}
+
+message Vehicle {
+  int32 id = 1;
+  string patente = 2;
+  string marca = 3;
+  string modelo = 4;
+  int32 anio = 5;
+  string color = 6;
+  VehicleType tipo_vehiculo = 7;
+  double precio_diario = 8;
+  VehicleStatus estado = 9;
+  bool activo = 10;
+}
+
+message VehicleFilter {
+  VehicleType tipo_vehiculo = 1;
+  string marca = 2;
+  string modelo = 3;
+  double precio_min = 4;
+  double precio_max = 5;
+}
+
+message ListVehiclesRequest {
+  bool solo_activos = 1;
+}
+
+message ListVehiclesResponse {
+  repeated Vehicle vehiculos = 1;
+}
+
+message GetVehicleRequest {
+  int32 id = 1;
+}
+
+message CheckAvailabilityRequest {
+  google.protobuf.Timestamp fecha_inicio = 1;
+  google.protobuf.Timestamp fecha_fin = 2;
+  VehicleFilter filtros = 3;
+}
+
+message CreateVehicleRequest {
+  string patente = 1;
+  string marca = 2;
+  string modelo = 3;
+  int32 anio = 4;
+  string color = 5;
+  VehicleType tipo_vehiculo = 6;
+  double precio_diario = 7;
+}
+
+message UpdateVehicleRequest {
+  int32 id = 1;
+  string marca = 2;
+  string modelo = 3;
+  int32 anio = 4;
+  string color = 5;
+  VehicleType tipo_vehiculo = 6;
+  double precio_diario = 7;
+  bool activo = 8;
+}
+
+message DeactivateVehicleRequest {
+  int32 id = 1;
+}
+
+message UpdateVehicleStatusRequest {
+  int32 id = 1;
+  VehicleStatus estado = 2;
+}
+
+message VehicleResponse {
+  Vehicle vehiculo = 1;
+}
