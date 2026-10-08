@@ -2,23 +2,25 @@ const express = require('express');
 const router = express.Router();
 const { customerClient, vehicleClient, rentalClient } = require('../grpc/clients');
 
-// Funciones helper para promesificar las llamadas gRPC
+// Helper para generar timeout de 5 segundos
+const getCallOptions = () => ({ deadline: new Date(Date.now() + 5000) });
+
 const isCustomerActive = (id) => new Promise((resolve, reject) => {
-    customerClient.IsCustomerActive({ id }, (err, response) => {
+    customerClient.IsCustomerActive({ id }, getCallOptions(), (err, response) => {
         if (err) return reject(err);
         resolve(response.activo);
     });
 });
 
 const getVehicle = (id) => new Promise((resolve, reject) => {
-    vehicleClient.GetVehicle({ id }, (err, response) => {
+    vehicleClient.GetVehicle({ id }, getCallOptions(), (err, response) => {
         if (err) return reject(err);
         resolve(response.vehiculo);
     });
 });
 
 const createRental = (data) => new Promise((resolve, reject) => {
-    rentalClient.CreateRental(data, (err, response) => {
+    rentalClient.CreateRental(data, getCallOptions(), (err, response) => {
         if (err) return reject(err);
         resolve(response.rental);
     });
@@ -64,7 +66,10 @@ router.post('/', async (req, res) => {
 
     } catch (error) {
         console.error("Error en orquestación de reserva:", error);
-        res.status(500).json({ error: "Error interno del servidor al procesar la reserva.", detalles: error.details });
+        res.status(500).json({ 
+            error: "Error interno del servidor al procesar la reserva.", 
+            detalles: error.details || error.message || "Error desconocido" 
+        });
     }
 });
 

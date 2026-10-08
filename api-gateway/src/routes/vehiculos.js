@@ -4,7 +4,7 @@ const { vehicleClient } = require('../grpc/clients');
 
 // GET /api/vehiculos
 router.get('/', (req, res) => {
-    vehicleClient.ListVehicles({ solo_activos: false }, (error, response) => {
+    vehicleClient.ListVehicles({ solo_activos: false }, { deadline: new Date(Date.now() + 5000) }, (error, response) => {
         if (error) {
             console.error("Error en gRPC:", error);
             return res.status(500).json({ error: "Error al obtener vehículos" });
@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
 
 // GET /api/vehiculos/:id
 router.get('/:id', (req, res) => {
-    vehicleClient.GetVehicle({ id: parseInt(req.params.id) }, (error, response) => {
+    vehicleClient.GetVehicle({ id: parseInt(req.params.id) }, { deadline: new Date(Date.now() + 5000) }, (error, response) => {
         if (error) {
             return res.status(404).json({ error: "Vehículo no encontrado" });
         }
