@@ -19,17 +19,22 @@ const options = {
 
 const vehiclePackageDef = protoLoader.loadSync(getProtoPath('vehicle.proto'), options);
 const customerPackageDef = protoLoader.loadSync(getProtoPath('customer.proto'), options);
+const rentalPackageDef = protoLoader.loadSync(getProtoPath('rental.proto'), options);
 
 const vehicleProto = grpc.loadPackageDefinition(vehiclePackageDef).rentar.vehicle.v1;
 const customerProto = grpc.loadPackageDefinition(customerPackageDef).rentar.customer.v1;
+const rentalProto = grpc.loadPackageDefinition(rentalPackageDef).rentar.rental.v1;
 
 const vehicleUrl = process.env.VEHICLE_GRPC_URL || 'localhost:50051';
 const customerUrl = process.env.CUSTOMER_GRPC_URL || 'localhost:50052';
+const rentalUrl = process.env.RENTAL_GRPC_URL || 'localhost:50053';
 
 const vehicleClient = new vehicleProto.VehicleService(vehicleUrl, grpc.credentials.createInsecure());
 const customerClient = new customerProto.CustomerService(customerUrl, grpc.credentials.createInsecure());
+const rentalClient = new rentalProto.RentalService(rentalUrl, grpc.credentials.createInsecure());
 
 module.exports = {
     vehicleClient,
-    customerClient
+    customerClient,
+    rentalClient
 };
