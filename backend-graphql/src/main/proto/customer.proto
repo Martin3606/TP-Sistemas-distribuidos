@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package rentar.customer.v1;
+
+// =========================================================
+// Servicio
+// =========================================================
+service CustomerService {
+  // Autenticación
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // ABM de Clientes
+  rpc ListCustomers(ListCustomersRequest) returns (ListCustomersResponse);
+  rpc GetCustomer(GetCustomerRequest) returns (CustomerResponse);
+  rpc CreateCustomer(CreateCustomerRequest) returns (CustomerResponse);
+  rpc UpdateCustomer(UpdateCustomerRequest) returns (CustomerResponse);
+}
+
+// =========================================================
+// Enumeraciones
+// =========================================================
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ADMIN = 1;
+  CLIENTE = 2;
+}
+
+// =========================================================
+// Entidades principales
+// =========================================================
+message Customer {
+  int32 id = 1;
+  string documento = 2;
+  string nombre = 3;
+  string apellido = 4;
+  string email = 5;
+  string telefono = 6;
+  bool activo = 7;
+}
+
+// =========================================================
+// Mensajes de Autenticación
+// =========================================================
+message AuthenticateRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthenticateResponse {
+  string token = 1;
+  int32 user_id = 2;
+  string email = 3;
+  Role rol = 4;
+  // Utilizamos 'optional' porque los administradores tienen cliente_id en NULL en la base de datos
+  optional int32 cliente_id = 5; 
+}
+
+// =========================================================
+// Mensajes de ABM (Requests y Responses)
+// =========================================================
+message ListCustomersRequest {
+  // Permite al Gateway filtrar opcionalmente solo clientes activos
+  bool solo_activos = 1; 
+}
+
+message ListCustomersResponse {
+  repeated Customer clientes = 1;
+}
+
+message GetCustomerRequest {
+  int32 id = 1;
+}
+
+message CreateCustomerRequest {
+  string documento = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string email = 4;
+  string telefono = 5;
+  // La fecha de nacimiento podría agregarse como string (YYYY-MM-DD) si la necesitan en el futuro
+}
+
+message UpdateCustomerRequest {
+  int32 id = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string email = 4;
+  string telefono = 5;
+  bool activo = 6;
+}
+
+message CustomerResponse {
+  Customer cliente = 1;
+}

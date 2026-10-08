@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package rentar.rental.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// =========================================================
+// Servicio
+// =========================================================
+service RentalService {
+  rpc CreateRental(CreateRentalRequest) returns (RentalResponse);
+  rpc CancelRental(CancelRentalRequest) returns (RentalResponse);
+  rpc GetRentalById(GetRentalByIdRequest) returns (RentalResponse);
+  rpc ListRentalsByCustomer(ListRentalsByCustomerRequest) returns (ListRentalsResponse);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+}
+
+// =========================================================
+// Enumeraciones
+// =========================================================
+enum RentalState {
+  RENTAL_STATE_UNSPECIFIED = 0;
+  CONFIRMADA = 1;
+  CANCELADA = 2;
+  FINALIZADA = 3;
+}
+
+// =========================================================
+// Entidades principales
+// =========================================================
+message Rental {
+  int32 id = 1;
+  int32 cliente_id = 2;
+  int32 vehiculo_id = 3;
+  google.protobuf.Timestamp fecha_inicio = 4;
+  google.protobuf.Timestamp fecha_fin = 5;
+  double precio_diario_snapshot = 6;
+  double importe_total = 7;
+  RentalState estado = 8;
+}
+
+// =========================================================
+// Mensajes de Requests
+// =========================================================
+message CreateRentalRequest {
+  int32 cliente_id = 1;
+  int32 vehiculo_id = 2;
+  google.protobuf.Timestamp fecha_inicio = 3;
+  google.protobuf.Timestamp fecha_fin = 4;
+  // Se incluye el precio_diario_snapshot para que este microservicio 
+  // pueda calcular y persistir el importe_total sin volver a consultar al VehicleService
+  double precio_diario_snapshot = 5; 
+}
+
+message CancelRentalRequest {
+  int32 id = 1;
+}
+
+message GetRentalByIdRequest {
+  int32 id = 1;
+}
+
+message ListRentalsByCustomerRequest {
+  int32 cliente_id = 1;
+}
+
+message CheckAvailabilityRequest {
+  int32 vehiculo_id = 1;
+  google.protobuf.Timestamp fecha_inicio = 2;
+  google.protobuf.Timestamp fecha_fin = 3;
+}
+
+// =========================================================
+// Mensajes de Responses
+// =========================================================
+message RentalResponse {
+  Rental rental = 1;
+}
+
+message ListRentalsResponse {
+  repeated Rental rentals = 1;
+}
+
+message CheckAvailabilityResponse {
+  bool disponible = 1;
+}

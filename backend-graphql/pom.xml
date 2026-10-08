@@ -15,10 +15,12 @@
     <artifactId>backend-graphql</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>backend-graphql</name>
-    <description>Rentar - API GraphQL</description>
+    <description>Rentar - API GraphQL y Servicios gRPC</description>
 
     <properties>
         <java.version>17</java.version>
+        <protobuf.version>3.24.0</protobuf.version>
+        <grpc.version>1.58.0</grpc.version>
     </properties>
 
     <dependencies>
@@ -76,14 +78,76 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ============================================== -->
+        <!-- NUEVAS DEPENDENCIAS gRPC (Hito 2)              -->
+        <!-- ============================================== -->
+        <dependency>
+            <groupId>net.devh</groupId>
+            <artifactId>grpc-server-spring-boot-starter</artifactId>
+            <version>2.15.0.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
     </dependencies>
 
     <build>
+        <!-- Extensiones para detectar el sistema operativo (necesario para compilar Protobuf) -->
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.1</version>
+            </extension>
+        </extensions>
+        
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            
+            <!-- Plugin para convertir los archivos .proto a clases Java -->
+            <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.6.1</version>
+                <configuration>
+                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
+                            <goal>compile-custom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>3.4.0</version>
+            <executions>
+                <execution>
+                    <id>add-source</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                    </goals>
+                    <configuration>
+                        <sources>
+                            <source>${project.build.directory}/generated-sources/protobuf/java</source>
+                            <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
+                        </sources>
+                    </configuration>
+                </execution>
+    </executions>
+</plugin>
         </plugins>
     </build>
 </project>
