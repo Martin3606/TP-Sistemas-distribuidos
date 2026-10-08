@@ -1,15 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 from app.database import engine
-from app.routers import clientes
+from app.routers import reservas, vehiculos, clientes, auth
 
 app = FastAPI(title="Rentar - API REST", version="1.0.0")
 
-# Configuración de CORS para permitir la conexión desde el Frontend Web
+# 1. Configuración de CORS (soporta preflight OPTIONS y cualquier origen)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,13 +16,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Registrar Ruteador de Clientes
+# Auth: mapea /auth/login y /api/auth/login
+app.include_router(auth.router)
+app.include_router(auth.router, prefix="/api")
+
+# Clientes: mapea /api/clientes y /clientes
 app.include_router(clientes.router)
+app.include_router(clientes.router, prefix="/api")
+
+# Vehículos: mapea /vehiculos y /api/vehiculos
+app.include_router(vehiculos.router)
+app.include_router(vehiculos.router, prefix="/api")
+
+# Reservas: mapea /reservas y /api/reservas
+app.include_router(reservas.router)
+app.include_router(reservas.router, prefix="/api")
 
 
 @app.get("/health")
 def health_check():
+    """Prueba real de conexión a la base de datos."""
     with engine.connect() as conn:
         conn.execute(text("SELECT 1"))
     return {"status": "ok", "database": "connected"}
-

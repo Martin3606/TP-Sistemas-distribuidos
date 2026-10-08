@@ -85,3 +85,22 @@ CREATE INDEX idx_reserva_disponibilidad
 -- Índice para "mis reservas" del cliente
 CREATE INDEX idx_reserva_cliente
     ON reserva (cliente_id, estado);
+
+-- =========================================================
+-- Tabla: usuario (Autenticación y Roles: ADMIN / CLIENTE)
+-- =========================================================
+CREATE TABLE usuario (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    email           VARCHAR(150) NOT NULL,
+    password_hash   VARCHAR(255) NOT NULL,
+    rol             ENUM('ADMIN', 'CLIENTE') NOT NULL,
+    cliente_id      INT NULL,
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                     ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT uq_usuario_email UNIQUE (email),
+    CONSTRAINT fk_usuario_cliente
+        FOREIGN KEY (cliente_id) REFERENCES cliente(id) ON DELETE SET NULL
+) ENGINE=InnoDB;
+

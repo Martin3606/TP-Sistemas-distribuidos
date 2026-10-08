@@ -1,5 +1,6 @@
 package com.rentar.backendgraphql.controller;
 
+import com.rentar.backendgraphql.config.UserAuth;
 import com.rentar.backendgraphql.dto.FiltroDisponibilidadInput;
 import com.rentar.backendgraphql.dto.FiltroReservaInput;
 import com.rentar.backendgraphql.model.Reserva;
@@ -7,11 +8,11 @@ import com.rentar.backendgraphql.model.Vehiculo;
 import com.rentar.backendgraphql.repository.ReservaRepository;
 import com.rentar.backendgraphql.repository.VehiculoRepository;
 import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.ContextValue;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -62,15 +63,26 @@ public class ConsultaGraphQLController {
     /**
      * [Requerimiento 5 - CLIENTE / ADMINISTRADOR]
      * Consulta de reservas registradas con filtros opcionales.
+     * Si el usuario es un CLIENTE, fuerza el filtro a su propio clienteId por seguridad.
      */
     @QueryMapping
-    public List<Reserva> consultarReservas(@Argument FiltroReservaInput filtro) {
+    public List<Reserva> consultarReservas(
+            @Argument FiltroReservaInput filtro,
+            @ContextValue(name = "userAuth", required = false) UserAuth userAuth
+    ) {
+        Integer clienteIdFiltro = filtro != null ? filtro.getClienteId() : null;
+
+        // Si es CLIENTE, restringir únicamente a sus propias reservas
+        if (userAuth != null && userAuth.isCliente() && userAuth.getClienteId() != null) {
+            clienteIdFiltro = userAuth.getClienteId();
+        }
+
         if (filtro == null) {
-            return reservaRepository.findReservasConFiltros(null, null, null, null, null, null);
+            return reservaRepository.findReservasConFiltros(clienteIdFiltro, null, null, null, null, null);
         }
 
         return reservaRepository.findReservasConFiltros(
-                filtro.getClienteId(),
+                clienteIdFiltro,
                 filtro.getVehiculoId(),
                 filtro.getTipoVehiculo(),
                 filtro.getEstado(),
@@ -82,13 +94,22 @@ public class ConsultaGraphQLController {
     /**
      * [Requerimiento 7 - CLIENTE]
      * Historial de alquileres para un cliente específico.
+     * Si el usuario es CLIENTE, fuerza la consulta a su propio clienteId.
      */
     @QueryMapping
-    public List<Reserva> historialAlquileres(@Argument Integer clienteId) {
-        if (clienteId == null) {
+    public List<Reserva> historialAlquileres(
+            @Argument Integer clienteId,
+            @ContextValue(name = "userAuth", required = false) UserAuth userAuth
+    ) {
+        Integer targetClienteId = clienteId;
+        if (userAuth != null && userAuth.isCliente() && userAuth.getClienteId() != null) {
+            targetClienteId = userAuth.getClienteId();
+        }
+
+        if (targetClienteId == null) {
             return Collections.emptyList();
         }
-        return reservaRepository.findHistorialByClienteId(clienteId);
+        return reservaRepository.findHistorialByClienteId(targetClienteId);
     }
 
     /**
