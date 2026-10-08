@@ -1,21 +1,74 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  mysql:
+  # Base de datos (1 instancia, 3 esquemas)
+  mysql-db:
     image: mysql:8.0
     container_name: rentar-mysql
-    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: rentar
-      MYSQL_USER: rentar_user
-      MYSQL_PASSWORD: rentar_pass
+      MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      - db_data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      - rentar-network
+
+  # API Gateway (El único expuesto al host)
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8000:8000" # REST
+      - "8080:8080" # GraphQL
+    environment:
+      - VEHICLE_GRPC_URL=vehicle-service:50051
+      - CUSTOMER_GRPC_URL=customer-service:50052
+      - RENTAL_GRPC_URL=rental-service:50053
+    networks:
+      - rentar-network
+    depends_on:
+      - mysql-db
+
+  # Microservicios internos (NO exponen puertos al host, solo en la red interna)
+  vehicle-service:
+    build:
+      context: ./vehicle-service # Ajustar si la carpeta se llama diferente
+    container_name: vehicle-service
+    environment:
+      - DB_URL=mysql+pymysql://root:root@mysql-db:3306/db_vehiculos
+    networks:
+      - rentar-network
+    depends_on:
+      - mysql-db
+
+  customer-service:
+    build:
+      context: ./customer-service # Ajustar si la carpeta se llama diferente
+    container_name: customer-service
+    environment:
+      - DB_URL=mysql+pymysql://root:root@mysql-db:3306/db_clientes
+    networks:
+      - rentar-network
+    depends_on:
+      - mysql-db
+
+  rental-service:
+    build:
+      context: ./rental-service # Ajustar si la carpeta se llama diferente
+    container_name: rental-service
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_alquileres
+    networks:
+      - rentar-network
+    depends_on:
+      - mysql-db
+
+networks:
+  rentar-network:
+    driver: bridge
 
 volumes:
-  mysql_data:
+  db_data:
