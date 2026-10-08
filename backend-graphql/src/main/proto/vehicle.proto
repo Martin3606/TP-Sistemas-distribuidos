@@ -7,32 +7,29 @@ import "google/protobuf/timestamp.proto";
 service VehicleService {
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
   rpc GetVehicle(GetVehicleRequest) returns (VehicleResponse);
-
-  rpc CheckAvailability(CheckAvailabilityRequest)
-      returns (ListVehiclesResponse);
+  rpc CheckAvailability(CheckAvailabilityRequest) returns (ListVehiclesResponse);
 
   rpc CreateVehicle(CreateVehicleRequest) returns (VehicleResponse);
   rpc UpdateVehicle(UpdateVehicleRequest) returns (VehicleResponse);
   rpc DeactivateVehicle(DeactivateVehicleRequest) returns (VehicleResponse);
 
-  rpc UpdateVehicleStatus(UpdateVehicleStatusRequest)
-      returns (VehicleResponse);
+  rpc UpdateVehicleStatus(UpdateVehicleStatusRequest) returns (VehicleResponse);
 }
 
 enum VehicleType {
   VEHICLE_TYPE_UNSPECIFIED = 0;
-  SEDAN = 1;
-  SUV = 2;
-  PICKUP = 3;
-  COUPE = 4;
-  HATCHBACK = 5;
+  VEHICLE_TYPE_SEDAN = 1;
+  VEHICLE_TYPE_SUV = 2;
+  VEHICLE_TYPE_PICKUP = 3;
+  VEHICLE_TYPE_COUPE = 4;
+  VEHICLE_TYPE_HATCHBACK = 5;
 }
 
 enum VehicleStatus {
   VEHICLE_STATUS_UNSPECIFIED = 0;
-  DISPONIBLE = 1;
-  RESERVADO = 2;
-  EN_ALQUILER = 3;
+  VEHICLE_STATUS_DISPONIBLE = 1;
+  VEHICLE_STATUS_RESERVADO = 2;
+  VEHICLE_STATUS_EN_ALQUILER = 3;
 }
 
 message Vehicle {
@@ -43,7 +40,7 @@ message Vehicle {
   int32 anio = 5;
   string color = 6;
   VehicleType tipo_vehiculo = 7;
-  double precio_diario = 8;
+  int64 precio_diario_centavos = 8;
   VehicleStatus estado = 9;
   bool activo = 10;
 }
@@ -52,8 +49,8 @@ message VehicleFilter {
   VehicleType tipo_vehiculo = 1;
   string marca = 2;
   string modelo = 3;
-  double precio_min = 4;
-  double precio_max = 5;
+  int64 precio_min_centavos = 4;
+  int64 precio_max_centavos = 5;
 }
 
 message ListVehiclesRequest {
@@ -81,7 +78,7 @@ message CreateVehicleRequest {
   int32 anio = 4;
   string color = 5;
   VehicleType tipo_vehiculo = 6;
-  double precio_diario = 7;
+  int64 precio_diario_centavos = 7;
 }
 
 message UpdateVehicleRequest {
@@ -91,7 +88,7 @@ message UpdateVehicleRequest {
   int32 anio = 4;
   string color = 5;
   VehicleType tipo_vehiculo = 6;
-  double precio_diario = 7;
+  int64 precio_diario_centavos = 7;
   bool activo = 8;
 }
 
