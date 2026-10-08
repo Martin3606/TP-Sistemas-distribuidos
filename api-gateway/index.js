@@ -15,6 +15,7 @@ app.use(express.json()); // Middleware para JSON
 // Rutas REST
 app.use('/api/vehiculos', require('./src/routes/vehiculos'));
 app.use('/api/clientes', require('./src/routes/clientes'));
+app.use('/api/reservas', require('./src/routes/reservas'));
 
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', service: 'api-gateway' });
