@@ -55,6 +55,7 @@ message VehicleFilter {
 
 message ListVehiclesRequest {
   bool solo_activos = 1;
+  VehicleFilter filters = 2;
 }
 
 message ListVehiclesResponse {
