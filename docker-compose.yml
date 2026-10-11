@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Base de datos (1 instancia, 3 esquemas)
   mysql-db:
