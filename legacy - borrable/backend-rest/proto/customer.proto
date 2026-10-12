@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package rentar.customer.v1;
+
+service CustomerService {
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc ListCustomers(ListCustomersRequest) returns (ListCustomersResponse);
+  rpc GetCustomer(GetCustomerRequest) returns (CustomerResponse);
+  // Busqueda por documento (DNI), la usa la pantalla de reservas del admin
+  rpc GetCustomerByDocument(GetCustomerByDocumentRequest) returns (CustomerResponse);
+  rpc CreateCustomer(CreateCustomerRequest) returns (CustomerResponse);
+  rpc UpdateCustomer(UpdateCustomerRequest) returns (CustomerResponse);
+  // Baja logica (activo = false)
+  rpc DeactivateCustomer(GetCustomerRequest) returns (CustomerResponse);
+  rpc CheckCustomerExists(GetCustomerRequest) returns (CheckCustomerExistsResponse);
+  rpc IsCustomerActive(GetCustomerRequest) returns (IsCustomerActiveResponse);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_ADMIN = 1;
+  ROLE_CLIENTE = 2;
+}
+
+message Customer {
+  int32 id = 1;
+  string documento = 2;
+  string nombre = 3;
+  string apellido = 4;
+  string email = 5;
+  string telefono = 6;
+  bool activo = 7;
+  string fecha_nacimiento = 8; // YYYY-MM-DD, vacio si no se cargo
+}
+
+message AuthenticateRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthenticateResponse {
+  string token = 1;
+  int32 user_id = 2;
+  string email = 3;
+  Role rol = 4;
+  optional int32 cliente_id = 5;
+  string nombre = 6; // nombre para mostrar en la interfaz
+}
+
+message ListCustomersRequest {
+  bool solo_activos = 1; 
+}
+
+message ListCustomersResponse {
+  repeated Customer clientes = 1;
+}
+
+message GetCustomerRequest {
+  int32 id = 1;
+}
+
+message CreateCustomerRequest {
+  string documento = 1;
+  string nombre = 2;
+  string apellido = 3;
+  string email = 4;
+  string telefono = 5;
+  string fecha_nacimiento = 6; // YYYY-MM-DD, opcional
+}
+
+// Actualizacion parcial: un campo 'optional' ausente se conserva;
+// presente (aunque sea "") se aplica. telefono y fecha_nacimiento "" los borran.
+message UpdateCustomerRequest {
+  int32 id = 1;
+  optional string nombre = 2;
+  optional string apellido = 3;
+  optional string email = 4;
+  optional string telefono = 5;
+  optional bool activo = 6;
+  optional string documento = 7;
+  optional string fecha_nacimiento = 8;
+}
+
+message GetCustomerByDocumentRequest {
+  string documento = 1;
+}
+
+message CustomerResponse {
+  Customer cliente = 1;
+}
+
+message CheckCustomerExistsResponse {
+  bool existe = 1;
+}
+
+message IsCustomerActiveResponse {
+  bool activo = 1;
+}

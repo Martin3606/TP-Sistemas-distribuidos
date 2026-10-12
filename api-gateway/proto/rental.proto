@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package rentar.rental.v1;
 
+// Opciones solo para generar clases Java (no alteran el contrato)
+option java_multiple_files = true;
+option java_package = "com.rentar.rentalservice.proto";
+
 import "google/protobuf/timestamp.proto";
 
 service RentalService {

@@ -10,6 +10,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -18,6 +19,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.function.Supplier;
@@ -25,7 +27,7 @@ import java.util.function.Supplier;
 /**
  * Rental Service: crear, cancelar y consultar reservas / historial.
  * No valida clientes ni vehiculos (eso lo orquesta el API Gateway).
- * Las fechas se guardan en UTC.
+ * Las fechas se guardan como hora de pared (sin zona); "ahora" se calcula en rental.zone.
  */
 @Component
 public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
@@ -36,12 +38,16 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
 
     private final ReservaRepository repo;
     private final TransactionTemplate tx;
+    /** Zona horaria con la que se interpretan las fechas "de pared" (sin zona) que carga el usuario. */
+    private final ZoneId zona;
     /** Serializa altas para que dos pedidos simultaneos no reserven el mismo auto. */
     private final Object lockAltas = new Object();
 
-    public RentalGrpcService(ReservaRepository repo, PlatformTransactionManager txManager) {
+    public RentalGrpcService(ReservaRepository repo, PlatformTransactionManager txManager,
+                             @Value("${rental.zone:America/Argentina/Buenos_Aires}") String zona) {
         this.repo = repo;
         this.tx = new TransactionTemplate(txManager);
+        this.zona = ZoneId.of(zona);
     }
 
     // ------------------------------------------------------------------ RPCs
@@ -167,8 +173,9 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
         return status.withDescription(mensaje).asRuntimeException();
     }
 
-    private static LocalDateTime ahora() {
-        return LocalDateTime.now(ZoneOffset.UTC);
+    /** "Ahora" en la zona del negocio: las fechas guardadas son hora de pared sin zona. */
+    private LocalDateTime ahora() {
+        return LocalDateTime.now(zona);
     }
 
     private static LocalDateTime aLocal(Timestamp ts) {

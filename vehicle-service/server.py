@@ -114,6 +114,17 @@ class VehicleService(vehicle_pb2_grpc.VehicleServiceServicer):
     def GetVehicle(self, request, context):
         return vehicle_pb2.VehicleResponse(vehiculo=self._obtener(request.id, context))
 
+    def GetVehicleByPlate(self, request, context):
+        patente = normalizar_patente(request.patente or "")
+        if not patente:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "La patente es obligatoria")
+        with engine.connect() as conn:
+            fila = conn.execute(text(f"SELECT {COLUMNAS} FROM vehiculo WHERE patente = :p"),
+                                {"p": patente}).fetchone()
+        if fila is None:
+            context.abort(grpc.StatusCode.NOT_FOUND, "No se encontró el vehículo especificado")
+        return vehicle_pb2.VehicleResponse(vehiculo=fila_a_vehicle(fila))
+
     def CheckAvailability(self, request, context):
         """Candidatos disponibles según filtros.
 

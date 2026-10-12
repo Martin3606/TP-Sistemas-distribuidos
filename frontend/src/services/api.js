@@ -4,7 +4,7 @@ const GATEWAY_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 export const REST_URL = GATEWAY_URL;
 export const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || `${GATEWAY_URL}/graphql`;
 
-function getAuthHeaders() {
+export function getAuthHeaders() {
   const token = localStorage.getItem("rentar_token");
   const headers = {};
   if (token) {

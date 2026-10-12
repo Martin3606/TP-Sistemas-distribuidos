@@ -180,20 +180,11 @@ function Reservas() {
     };
 
     try {
-      let reservaCreada;
-      try {
-        reservaCreada = await fetchREST("/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        reservaCreada = await fetchREST("/api/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
+      const reservaCreada = await fetchREST("/api/reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       setSuccess(`¡Reserva CONFIRMADA con éxito! Vehículo Patente: ${vehiculoSeleccionado.patente} - Importe Total: $${reservaCreada.importe_total}`);
       setVehiculoSeleccionado(null);

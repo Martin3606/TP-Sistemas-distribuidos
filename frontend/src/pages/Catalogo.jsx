@@ -97,20 +97,11 @@ function Catalogo() {
     };
 
     try {
-      let res;
-      try {
-        res = await fetchREST("/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        res = await fetchREST("/api/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
+      const res = await fetchREST("/api/reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       setSuccess(`¡Reserva confirmada con éxito para el vehículo ${vehiculoSeleccionado.marca} ${vehiculoSeleccionado.modelo}! Importe total: $${res.importe_total}`);
       setVehiculoSeleccionado(null);

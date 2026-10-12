@@ -8,7 +8,7 @@ Persiste SOLO en db_clientes (tablas cliente y usuario).
 import os
 import re
 from concurrent import futures
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import bcrypt
 import grpc
@@ -26,7 +26,7 @@ JWT_ALGORITHM = "HS256"
 JWT_HORAS = 24
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-COLUMNAS = "id, documento, nombre, apellido, email, telefono, activo"
+COLUMNAS = "id, documento, nombre, apellido, email, telefono, fecha_nacimiento, activo"
 
 ROL_A_ENUM = {"ADMIN": customer_pb2.ROLE_ADMIN, "CLIENTE": customer_pb2.ROLE_CLIENTE}
 
@@ -34,7 +34,9 @@ ROL_A_ENUM = {"ADMIN": customer_pb2.ROLE_ADMIN, "CLIENTE": customer_pb2.ROLE_CLI
 def fila_a_customer(r):
     return customer_pb2.Customer(
         id=r.id, documento=r.documento, nombre=r.nombre, apellido=r.apellido,
-        email=r.email, telefono=r.telefono or "", activo=bool(r.activo))
+        email=r.email, telefono=r.telefono or "",
+        fecha_nacimiento=r.fecha_nacimiento.isoformat() if r.fecha_nacimiento else "",
+        activo=bool(r.activo))
 
 
 class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
@@ -43,8 +45,10 @@ class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
     def Authenticate(self, request, context):
         with engine.connect() as conn:
             u = conn.execute(text(
-                "SELECT id, email, password_hash, rol, cliente_id FROM usuario "
-                "WHERE email = :email"), {"email": request.email.strip()}).fetchone()
+                "SELECT u.id, u.email, u.password_hash, u.rol, u.cliente_id, "
+                "c.nombre AS c_nombre, c.apellido AS c_apellido "
+                "FROM usuario u LEFT JOIN cliente c ON c.id = u.cliente_id "
+                "WHERE u.email = :email"), {"email": request.email.strip()}).fetchone()
         ok = False
         if u is not None:
             try:
@@ -62,8 +66,13 @@ class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
              "iat": now, "exp": now + timedelta(hours=JWT_HORAS)},
             JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+        if u.c_nombre:
+            nombre = f"{u.c_nombre} {u.c_apellido or ''}".strip()
+        else:
+            nombre = "Administrador"
+
         resp = customer_pb2.AuthenticateResponse(
-            token=token, user_id=u.id, email=u.email, rol=ROL_A_ENUM[u.rol])
+            token=token, user_id=u.id, email=u.email, rol=ROL_A_ENUM[u.rol], nombre=nombre)
         if u.cliente_id is not None:
             resp.cliente_id = u.cliente_id
         return resp
@@ -81,6 +90,18 @@ class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
     def GetCustomer(self, request, context):
         return customer_pb2.CustomerResponse(cliente=self._obtener(request.id, context))
 
+    def GetCustomerByDocument(self, request, context):
+        documento = (request.documento or "").strip()
+        if not documento:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "El documento es obligatorio")
+        with engine.connect() as conn:
+            fila = conn.execute(text(f"SELECT {COLUMNAS} FROM cliente WHERE documento = :d"),
+                                {"d": documento}).fetchone()
+        if fila is None:
+            context.abort(grpc.StatusCode.NOT_FOUND,
+                          "No se encontró ningún cliente registrado para asociar a la reserva")
+        return customer_pb2.CustomerResponse(cliente=fila_a_customer(fila))
+
     def CheckCustomerExists(self, request, context):
         with engine.connect() as conn:
             fila = conn.execute(text("SELECT 1 FROM cliente WHERE id = :id"),
@@ -95,16 +116,18 @@ class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
 
     # ---------- ABM ----------
     def CreateCustomer(self, request, context):
+        fecha = self._parsear_fecha(context, request.fecha_nacimiento)
         self._validar(context, request.documento, request.nombre, request.apellido,
                       request.email, request.telefono)
         try:
             with engine.begin() as conn:
                 res = conn.execute(text(
-                    "INSERT INTO cliente (documento, nombre, apellido, email, telefono, activo) "
-                    "VALUES (:doc, :nom, :ape, :email, :tel, TRUE)"),
+                    "INSERT INTO cliente (documento, nombre, apellido, email, telefono, "
+                    "fecha_nacimiento, activo) "
+                    "VALUES (:doc, :nom, :ape, :email, :tel, :fnac, TRUE)"),
                     {"doc": request.documento.strip(), "nom": request.nombre.strip(),
                      "ape": request.apellido.strip(), "email": request.email.strip(),
-                     "tel": request.telefono or None})
+                     "tel": request.telefono or None, "fnac": fecha})
                 nuevo_id = res.lastrowid
         except IntegrityError as exc:
             self._traducir_duplicado(exc, context, request.documento, request.email)
@@ -112,30 +135,63 @@ class CustomerService(customer_pb2_grpc.CustomerServiceServicer):
         return customer_pb2.CustomerResponse(cliente=self._obtener(nuevo_id, context))
 
     def UpdateCustomer(self, request, context):
-        """Actualización: los campos de texto vacíos se conservan.
+        """Actualización parcial: los campos 'optional' ausentes se conservan.
 
-        `activo` (bool) siempre se aplica: para dar de baja un cliente el
-        Gateway debe enviar los datos actuales con activo=false.
+        Un texto presente pero vacío SÍ se aplica (para telefono y
+        fecha_nacimiento significa "borrar el dato"; en los obligatorios es
+        un error de validación).
         """
         actual = self._obtener(request.id, context)
-        nombre = request.nombre.strip() or actual.nombre
-        apellido = request.apellido.strip() or actual.apellido
-        email = request.email.strip() or actual.email
-        telefono = request.telefono if request.telefono != "" else actual.telefono
-        self._validar(context, actual.documento, nombre, apellido, email, telefono)
+        tiene = request.HasField
+
+        documento = request.documento.strip() if tiene("documento") else actual.documento
+        nombre = request.nombre.strip() if tiene("nombre") else actual.nombre
+        apellido = request.apellido.strip() if tiene("apellido") else actual.apellido
+        email = request.email.strip() if tiene("email") else actual.email
+        telefono = request.telefono.strip() if tiene("telefono") else actual.telefono
+        if tiene("fecha_nacimiento"):
+            fecha = self._parsear_fecha(context, request.fecha_nacimiento)
+        else:
+            fecha = date.fromisoformat(actual.fecha_nacimiento) if actual.fecha_nacimiento else None
+        activo = request.activo if tiene("activo") else actual.activo
+
+        self._validar(context, documento, nombre, apellido, email, telefono)
         try:
             with engine.begin() as conn:
                 conn.execute(text(
-                    "UPDATE cliente SET nombre=:nom, apellido=:ape, email=:email, "
-                    "telefono=:tel, activo=:activo WHERE id=:id"),
-                    {"nom": nombre, "ape": apellido, "email": email,
-                     "tel": telefono or None, "activo": request.activo, "id": request.id})
+                    "UPDATE cliente SET documento=:doc, nombre=:nom, apellido=:ape, "
+                    "email=:email, telefono=:tel, fecha_nacimiento=:fnac, activo=:activo "
+                    "WHERE id=:id"),
+                    {"doc": documento, "nom": nombre, "ape": apellido, "email": email,
+                     "tel": telefono or None, "fnac": fecha, "activo": activo,
+                     "id": request.id})
         except IntegrityError as exc:
-            self._traducir_duplicado(exc, context, actual.documento, email)
+            self._traducir_duplicado(exc, context, documento, email)
             raise
         return customer_pb2.CustomerResponse(cliente=self._obtener(request.id, context))
 
+    def DeactivateCustomer(self, request, context):
+        self._obtener(request.id, context)  # 404 si no existe
+        with engine.begin() as conn:
+            conn.execute(text("UPDATE cliente SET activo = FALSE WHERE id = :id"),
+                         {"id": request.id})
+        return customer_pb2.CustomerResponse(cliente=self._obtener(request.id, context))
+
     # ---------- helpers ----------
+    def _parsear_fecha(self, context, valor):
+        valor = (valor or "").strip()
+        if not valor:
+            return None
+        try:
+            fecha = date.fromisoformat(valor)
+        except ValueError:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                          "La fecha de nacimiento debe tener formato YYYY-MM-DD")
+        if fecha > date.today():
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                          "La fecha de nacimiento no puede ser futura")
+        return fecha
+
     def _validar(self, context, documento, nombre, apellido, email, telefono):
         if not documento or not documento.strip() or len(documento.strip()) > 20:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT,

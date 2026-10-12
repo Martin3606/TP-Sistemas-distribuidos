@@ -1,4 +1,5 @@
-# Rentar - Hito 2 (microservicios). Reemplaza el docker-compose.yml de la raíz.
+# Rentar - Hito 2 (microservicios)
+# MySQL se publica en el puerto 3307 del host (el 3306 queda libre para un MySQL local).
 services:
   mysql-db:
     image: mysql:8.0
@@ -28,6 +29,7 @@ services:
       - VEHICLE_GRPC_URL=vehicle-service:50051
       - CUSTOMER_GRPC_URL=customer-service:50052
       - RENTAL_GRPC_URL=rental-service:50053
+      - JWT_SECRET=rentar_jwt_secret_key_1234567890_super_secret
     networks:
       - rentar-network
     depends_on:
@@ -81,6 +83,7 @@ services:
       - DB_PASSWORD=root
       - DB_NAME=db_alquileres
       - GRPC_PORT=50053
+      - APP_ZONE=America/Argentina/Buenos_Aires
     networks:
       - rentar-network
     depends_on:

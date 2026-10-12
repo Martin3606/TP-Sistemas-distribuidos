@@ -7,6 +7,8 @@ import "google/protobuf/timestamp.proto";
 service VehicleService {
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
   rpc GetVehicle(GetVehicleRequest) returns (VehicleResponse);
+  // Busqueda por patente (la usan las pantallas de reserva)
+  rpc GetVehicleByPlate(GetVehicleByPlateRequest) returns (VehicleResponse);
   rpc CheckAvailability(CheckAvailabilityRequest) returns (ListVehiclesResponse);
 
   rpc CreateVehicle(CreateVehicleRequest) returns (VehicleResponse);
@@ -63,6 +65,10 @@ message ListVehiclesResponse {
 
 message GetVehicleRequest {
   int32 id = 1;
+}
+
+message GetVehicleByPlateRequest {
+  string patente = 1;
 }
 
 message CheckAvailabilityRequest {
