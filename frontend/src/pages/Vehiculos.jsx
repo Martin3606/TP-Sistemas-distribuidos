@@ -3,6 +3,10 @@ import { fetchREST } from "../services/api";
 
 const TIPOS_VEHICULO = ["SEDAN", "SUV", "PICKUP", "COUPE", "HATCHBACK"];
 const DRAFT_KEY_VEHICULOS = "borrador_vehiculo";
+const normalizarBusqueda = (valor) => String(valor ?? "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLocaleLowerCase("es");
 
 const INITIAL_FORM_VEHICULO = {
   id: null,
@@ -39,9 +43,19 @@ function Vehiculos() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [busqueda, setBusqueda] = useState("");
 
   const [form, setForm] = useState(() => getInitialVehiculoDraft().form);
   const [editando, setEditando] = useState(() => getInitialVehiculoDraft().editando);
+
+  const terminoBusqueda = normalizarBusqueda(busqueda.trim());
+  const vehiculosFiltrados = vehiculos.filter((v) => {
+    const textoVehiculo = normalizarBusqueda([
+      v.patente, v.marca, v.modelo, v.anio, v.color, v.tipo_vehiculo,
+      v.precio_diario, v.estado, v.activo ? "activo" : "inactivo"
+    ].join(" "));
+    return textoVehiculo.includes(terminoBusqueda);
+  });
 
   useEffect(() => {
     cargarVehiculos();
@@ -456,6 +470,17 @@ function Vehiculos() {
       </form>
 
       <h3 style={{ color: "#333" }}>Catálogo de la Flota</h3>
+      <div style={{ marginBottom: "12px" }}>
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por patente, marca, modelo, año, color o estado..."
+          aria-label="Buscar vehículos"
+          style={{ width: "100%", maxWidth: "520px", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", boxSizing: "border-box" }}
+        />
+        {busqueda && <span style={{ marginLeft: "10px", color: "#666", fontSize: "0.9em" }}>{vehiculosFiltrados.length} resultado(s)</span>}
+      </div>
       {loading ? (
         <p>Cargando catálogo...</p>
       ) : (
@@ -473,10 +498,10 @@ function Vehiculos() {
               </tr>
             </thead>
             <tbody>
-              {vehiculos.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay vehículos registrados.</td></tr>
+              {vehiculosFiltrados.length === 0 ? (
+                <tr><td colSpan="7" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>{vehiculos.length === 0 ? "No hay vehículos registrados." : "No se encontraron vehículos con esa búsqueda."}</td></tr>
               ) : (
-                vehiculos.map((v) => (
+                vehiculosFiltrados.map((v) => (
                   <tr key={v.patente} style={{ backgroundColor: v.activo ? "#ffffff" : "#fff5f5" }}>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{v.patente}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.marca} {v.modelo} ({v.anio})</td>

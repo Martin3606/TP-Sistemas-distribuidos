@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { fetchREST } from "../services/api";
 
 const DRAFT_KEY_CLIENTES = "borrador_cliente";
+const normalizarBusqueda = (valor) => String(valor ?? "")
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toLocaleLowerCase("es");
 
 const INITIAL_FORM_CLIENTE = {
   id: null,
@@ -38,9 +42,19 @@ function Clientes() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [busqueda, setBusqueda] = useState("");
 
   const [form, setForm] = useState(initialDraft.form);
   const [editando, setEditando] = useState(initialDraft.editando);
+
+  const terminoBusqueda = normalizarBusqueda(busqueda.trim());
+  const clientesFiltrados = clientes.filter((c) => {
+    const textoCliente = normalizarBusqueda([
+      c.documento, c.nombre, c.apellido, `${c.nombre} ${c.apellido}`,
+      c.email, c.telefono, c.fecha_nacimiento, c.activo ? "activo" : "inactivo"
+    ].join(" "));
+    return textoCliente.includes(terminoBusqueda);
+  });
 
   useEffect(() => {
     cargarClientes();
@@ -388,6 +402,17 @@ function Clientes() {
       </form>
 
       <h3 style={{ color: "#333" }}>Padrón de Clientes</h3>
+      <div style={{ marginBottom: "12px" }}>
+        <input
+          type="search"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por documento, nombre, apellido, email, teléfono o estado..."
+          aria-label="Buscar clientes"
+          style={{ width: "100%", maxWidth: "560px", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", boxSizing: "border-box" }}
+        />
+        {busqueda && <span style={{ marginLeft: "10px", color: "#666", fontSize: "0.9em" }}>{clientesFiltrados.length} resultado(s)</span>}
+      </div>
       {loading ? (
         <p>Cargando clientes...</p>
       ) : (
@@ -404,10 +429,10 @@ function Clientes() {
               </tr>
             </thead>
             <tbody>
-              {clientes.length === 0 ? (
-                <tr><td colSpan="6" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No hay clientes registrados.</td></tr>
+              {clientesFiltrados.length === 0 ? (
+                <tr><td colSpan="6" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>{clientes.length === 0 ? "No hay clientes registrados." : "No se encontraron clientes con esa búsqueda."}</td></tr>
               ) : (
-                clientes.map((c) => (
+                clientesFiltrados.map((c) => (
                   <tr key={c.documento} style={{ backgroundColor: c.activo ? "#ffffff" : "#fff5f5" }}>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{c.documento}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{c.nombre} {c.apellido}</td>
