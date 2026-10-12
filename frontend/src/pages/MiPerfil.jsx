@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import "./ClientePages.css";
-const API_REST = "http://localhost:8000";
+import { REST_URL as API_REST } from "../services/api";
 const emptyProfile = { documento: "", nombre: "", apellido: "", email: "", telefono: "", fecha_nacimiento: "" };
 function MiPerfil() {
   const { clienteId, setClienteId } = useAuth(); const [perfil, setPerfil] = useState(emptyProfile); const [mensaje, setMensaje] = useState(""); const [error, setError] = useState(""); const [cargando, setCargando] = useState(false);

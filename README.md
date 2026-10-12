@@ -17,7 +17,7 @@ Desde la raíz del proyecto:
 docker-compose up -d
 ```
 
-Esto crea un contenedor MySQL expuesto en el puerto `3307` de tu máquina (usamos 3307 y no el 3306 de siempre porque es común tener ya un MySQL instalado localmente ocupando ese puerto), con la base `rentar` y todas las tablas del `db/init.sql` ya creadas. No hace falta crear nada a mano.
+Esto levanta los servicios del proyecto. MySQL escucha en el puerto `3306` dentro de Docker y se publica como `3307` en tu máquina (host `3307` → contenedor `3306`), para evitar conflictos con un MySQL local. La inicialización usa `db/init.sql`.
 
 Para verificar que arrancó bien:
 
