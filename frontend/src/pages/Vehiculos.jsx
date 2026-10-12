@@ -73,12 +73,7 @@ function Vehiculos() {
     setLoading(true);
     setError("");
     try {
-      let data;
-      try {
-        data = await fetchREST("/vehiculos");
-      } catch {
-        data = await fetchREST("/api/vehiculos");
-      }
+      const data = await fetchREST("/api/vehiculos");
       setVehiculos(data);
     } catch (err) {
       setError(err.message);
@@ -193,19 +188,11 @@ function Vehiculos() {
           precio_diario: precioNum,
         };
 
-        try {
-          await fetchREST(`/vehiculos/${form.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadPut),
-          });
-        } catch {
-          await fetchREST(`/api/vehiculos/${form.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadPut),
-          });
-        }
+        await fetchREST(`/api/vehiculos/${form.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadPut),
+        });
         setSuccess("Vehículo actualizado con éxito.");
       } else {
         const payloadPost = {
@@ -218,19 +205,11 @@ function Vehiculos() {
           precio_diario: precioNum,
         };
 
-        try {
-          await fetchREST("/vehiculos", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadPost),
-          });
-        } catch {
-          await fetchREST("/api/vehiculos", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadPost),
-          });
-        }
+        await fetchREST("/api/vehiculos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payloadPost),
+        });
         setSuccess("Vehículo registrado en la flota con éxito.");
       }
 
@@ -266,11 +245,7 @@ function Vehiculos() {
     setSuccess("");
 
     try {
-      try {
-        await fetchREST(`/vehiculos/${id}`, { method: "DELETE" });
-      } catch {
-        await fetchREST(`/api/vehiculos/${id}`, { method: "DELETE" });
-      }
+      await fetchREST(`/api/vehiculos/${id}`, { method: "DELETE" });
       setSuccess("Vehículo dado de baja lógicamente.");
       cargarVehiculos();
     } catch (err) {

@@ -1,27 +1,69 @@
+// Esquema GraphQL idéntico al del Hito 1 (el frontend no cambia).
 const typeDefs = `#graphql
+  enum TipoVehiculo { SEDAN SUV PICKUP COUPE HATCHBACK }
+  enum EstadoVehiculo { DISPONIBLE RESERVADO EN_ALQUILER }
+  enum EstadoReserva { CONFIRMADA CANCELADA FINALIZADA }
+
+  type Cliente {
+    id: ID!
+    documento: String!
+    nombre: String!
+    apellido: String!
+    email: String!
+    telefono: String
+    fechaNacimiento: String
+    activo: Boolean!
+  }
+
   type Vehiculo {
-    id: Int
-    patente: String
-    marca: String
-    modelo: String
-    anio: Int
+    id: ID!
+    patente: String!
+    marca: String!
+    modelo: String!
+    anio: Int!
     color: String
-    precio_diario_centavos: Int
-    estado: Int
+    tipoVehiculo: TipoVehiculo!
+    precioDiario: Float!
+    estado: EstadoVehiculo!
+    activo: Boolean!
   }
 
   type Reserva {
-    id: Int
-    cliente_id: Int
-    vehiculo_id: Int
-    fecha_inicio: String
-    fecha_fin: String
-    importe_total_centavos: Int
+    id: ID!
+    cliente: Cliente!
+    vehiculo: Vehiculo!
+    fechaInicio: String!
+    fechaFin: String!
+    precioDiarioSnapshot: Float!
+    importeTotal: Float!
+    estado: EstadoReserva!
+    cantidadDias: Int!
+  }
+
+  input FiltroDisponibilidadInput {
+    fechaInicio: String!
+    fechaFin: String!
+    tipoVehiculo: TipoVehiculo
+    marca: String
+    modelo: String
+    precioMin: Float
+    precioMax: Float
+  }
+
+  input FiltroReservaInput {
+    clienteId: ID
+    vehiculoId: ID
+    tipoVehiculo: TipoVehiculo
+    estado: EstadoReserva
+    fechaInicioDesde: String
+    fechaFinHasta: String
   }
 
   type Query {
-    catalogo: [Vehiculo]
-    historialAlquileres(cliente_id: Int!): [Reserva]
+    health: String
+    consultarDisponibilidad(filtro: FiltroDisponibilidadInput!): [Vehiculo!]!
+    consultarReservas(filtro: FiltroReservaInput): [Reserva!]!
+    historialAlquileres(clienteId: ID!): [Reserva!]!
   }
 `;
 

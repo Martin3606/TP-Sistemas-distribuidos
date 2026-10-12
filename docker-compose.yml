@@ -1,70 +1,94 @@
-version: '3.8'
-
+# Rentar - Hito 2 (microservicios)
+# MySQL se publica en el puerto 3307 del host (el 3306 queda libre para un MySQL local).
 services:
-  # Base de datos (1 instancia, 3 esquemas)
   mysql-db:
     image: mysql:8.0
     container_name: rentar-mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3306:3306"
+      - "3307:3306"          # host:3307 -> contenedor:3306
     volumes:
       - db_data:/var/lib/mysql
-      - ./db:/docker-entrypoint-initdb.d
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro   # solo init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
     networks:
       - rentar-network
 
-  # API Gateway (El único expuesto al host)
   api-gateway:
     build:
       context: ./api-gateway
     container_name: api-gateway
     ports:
-      - "8000:8000" # REST
-      - "8080:8080" # GraphQL
+      - "8000:8000"          # REST + GraphQL (/graphql)
     environment:
       - VEHICLE_GRPC_URL=vehicle-service:50051
       - CUSTOMER_GRPC_URL=customer-service:50052
       - RENTAL_GRPC_URL=rental-service:50053
+      - JWT_SECRET=rentar_jwt_secret_key_1234567890_super_secret
     networks:
       - rentar-network
     depends_on:
-      - mysql-db
+      - vehicle-service
+      - customer-service
+      - rental-service
 
-  # Microservicios internos (NO exponen puertos al host, solo en la red interna)
   vehicle-service:
     build:
-      context: ./vehicle-service # Ajustar si la carpeta se llama diferente
+      context: ./vehicle-service
     container_name: vehicle-service
     environment:
-      - DB_URL=mysql+pymysql://root:root@mysql-db:3306/db_vehiculos
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_vehiculos
+      - GRPC_PORT=50051
     networks:
       - rentar-network
     depends_on:
-      - mysql-db
+      mysql-db:
+        condition: service_healthy
 
   customer-service:
     build:
-      context: ./customer-service # Ajustar si la carpeta se llama diferente
+      context: ./customer-service
     container_name: customer-service
     environment:
-      - DB_URL=mysql+pymysql://root:root@mysql-db:3306/db_clientes
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_clientes
+      - GRPC_PORT=50052
+      - JWT_SECRET=rentar_jwt_secret_key_1234567890_super_secret
     networks:
       - rentar-network
     depends_on:
-      - mysql-db
+      mysql-db:
+        condition: service_healthy
 
   rental-service:
     build:
-      context: ./rental-service # Ajustar si la carpeta se llama diferente
+      context: ./rental-service
     container_name: rental-service
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-db:3306/db_alquileres
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_alquileres
+      - GRPC_PORT=50053
+      - APP_ZONE=America/Argentina/Buenos_Aires
     networks:
       - rentar-network
     depends_on:
-      - mysql-db
+      mysql-db:
+        condition: service_healthy
 
 networks:
   rentar-network:

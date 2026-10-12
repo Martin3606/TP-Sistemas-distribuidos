@@ -1,7 +1,10 @@
-export const REST_URL = "http://localhost:8000";
-export const GRAPHQL_URL = "http://localhost:8080/graphql";
+// Hito 2: toda la comunicación pasa por el API Gateway (Node.js, puerto 8000).
+// Se puede cambiar sin tocar código con frontend/.env.local (ver .env.example).
+const GATEWAY_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const REST_URL = GATEWAY_URL;
+export const GRAPHQL_URL = import.meta.env.VITE_GRAPHQL_URL || `${GATEWAY_URL}/graphql`;
 
-function getAuthHeaders() {
+export function getAuthHeaders() {
   const token = localStorage.getItem("rentar_token");
   const headers = {};
   if (token) {
@@ -104,7 +107,7 @@ export function sanitizarMensajeError(rawError) {
 }
 
 /**
- * Helper para peticiones HTTP a la API REST (FastAPI :8000)
+ * Helper para peticiones HTTP a la API REST (API Gateway :8000)
  */
 export async function fetchREST(endpoint, options = {}) {
   try {
@@ -127,6 +130,11 @@ export async function fetchREST(endpoint, options = {}) {
           rawMessage = errorData.detail.map((e) => e.msg || e.detail).join(" | ");
         } else if (errorData.message) {
           rawMessage = errorData.message;
+        } else if (typeof errorData.error === "string") {
+          // El API Gateway responde { error, detalles }
+          rawMessage = errorData.detalles
+            ? `${errorData.error} ${errorData.detalles}`
+            : errorData.error;
         }
       } catch {
         // No era respuesta JSON
@@ -141,7 +149,7 @@ export async function fetchREST(endpoint, options = {}) {
 }
 
 /**
- * Helper para realizar consultas y mutaciones a la API GraphQL (Spring Boot :8080)
+ * Helper para realizar consultas y mutaciones a la API GraphQL (API Gateway :8000/graphql)
  */
 export async function fetchGraphQL(query, variables = {}) {
   try {
