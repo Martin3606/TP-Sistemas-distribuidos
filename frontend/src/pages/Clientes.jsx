@@ -63,12 +63,7 @@ function Clientes() {
     setLoading(true);
     setError("");
     try {
-      let data;
-      try {
-        data = await fetchREST("/api/clientes");
-      } catch {
-        data = await fetchREST("/clientes");
-      }
+      const data = await fetchREST("/api/clientes");
       setClientes(data);
     } catch (err) {
       setError(err.message);
@@ -163,34 +158,18 @@ function Clientes() {
       };
 
       if (editando) {
-        try {
-          await fetchREST(`/api/clientes/${form.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-        } catch {
-          await fetchREST(`/clientes/${form.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-        }
+        await fetchREST(`/api/clientes/${form.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
         setSuccess("Cliente actualizado con éxito.");
       } else {
-        try {
-          await fetchREST("/api/clientes", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-        } catch {
-          await fetchREST("/clientes", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-        }
+        await fetchREST("/api/clientes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
         setSuccess("Cliente registrado con éxito.");
       }
 
@@ -225,11 +204,7 @@ function Clientes() {
     setSuccess("");
 
     try {
-      try {
-        await fetchREST(`/api/clientes/${id}`, { method: "DELETE" });
-      } catch {
-        await fetchREST(`/clientes/${id}`, { method: "DELETE" });
-      }
+      await fetchREST(`/api/clientes/${id}`, { method: "DELETE" });
       setSuccess("Cliente dado de baja lógicamente.");
       cargarClientes();
     } catch (err) {

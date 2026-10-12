@@ -52,12 +52,7 @@ function Reservas() {
 
   const cargarClientes = async () => {
     try {
-      let data;
-      try {
-        data = await fetchREST("/api/clientes?solo_activos=true");
-      } catch {
-        data = await fetchREST("/clientes?solo_activos=true");
-      }
+      const data = await fetchREST("/api/clientes?solo_activos=true");
       setClientesLista(data || []);
     } catch (err) {
       console.error("Error al cargar la lista de clientes:", err);

@@ -64,6 +64,7 @@ function Navbar() {
             <li><NavLink to="/vehiculos">Vehículos (ABM)</NavLink></li>
             <li><NavLink to="/clientes">Clientes (ABM)</NavLink></li>
             <li><NavLink to="/reservas">Todas las Reservas</NavLink></li>
+            <li><NavLink to="/historial">Historial de Clientes</NavLink></li>
           </>
         )}
 
