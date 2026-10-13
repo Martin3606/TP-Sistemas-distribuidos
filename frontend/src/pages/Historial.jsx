@@ -15,12 +15,7 @@ function Historial() {
 
   const cargarClientes = async () => {
     try {
-      let data;
-      try {
-        data = await fetchREST("/api/clientes");
-      } catch {
-        data = await fetchREST("/clientes");
-      }
+      const data = await fetchREST("/api/clientes");
       setClientesLista(data || []);
       if (data && data.length > 0) {
         setClienteSeleccionado(data[0].documento);
@@ -73,18 +68,13 @@ function Historial() {
     }
   };
 
-  const handleCancelarReserva = async (reservaId) => {
+ const handleCancelarReserva = async (reservaId) => {
     if (!window.confirm("¿Seguro que deseas cancelar esta reserva?")) return;
     setError("");
     setSuccess("");
 
     try {
-      try {
-        await fetchREST(`/reservas/${reservaId}/cancelar`, { method: "PATCH" });
-      } catch {
-        await fetchREST(`/api/reservas/${reservaId}/cancelar`, { method: "PATCH" });
-      }
-
+      await fetchREST(`/api/reservas/${reservaId}/cancelar`, { method: "PATCH" });
       setSuccess("Reserva cancelada correctamente.");
       const clienteObj = clientesLista.find((c) => c.documento === clienteSeleccionado);
       if (clienteObj) cargarHistorialPorDocumento(clienteObj.id);
@@ -173,7 +163,8 @@ function Historial() {
                       </span>
                     </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", whiteSpace: "nowrap" }}>
-                      {r.estado === "CONFIRMADA" ? (
+                      {/* Validamos que sea CONFIRMADA y que la fecha de inicio sea en el futuro */}
+                      {r.estado === "CONFIRMADA" && new Date(r.fechaInicio) > new Date() ? (
                         <button
                           onClick={() => handleCancelarReserva(r.id)}
                           style={{

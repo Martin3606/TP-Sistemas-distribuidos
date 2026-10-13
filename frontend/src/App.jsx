@@ -7,6 +7,7 @@ import Reservas from "./pages/Reservas.jsx";
 import Catalogo from "./pages/Catalogo.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import HistorialCliente from "./pages/HistorialCliente.jsx";
+import Historial from "./pages/Historial.jsx";
 import RutaProtegida from "./auth/RutaProtegida.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 
@@ -57,6 +58,15 @@ function App() {
             element={
               <RutaProtegida rolesPermitidos={["ADMIN"]}>
                 <Reservas />
+              </RutaProtegida>
+            }
+          />
+          {/* NUEVA RUTA: Historial para el Admin */}
+          <Route
+            path="/historial"
+            element={
+              <RutaProtegida rolesPermitidos={["ADMIN"]}>
+                <Historial />
               </RutaProtegida>
             }
           />

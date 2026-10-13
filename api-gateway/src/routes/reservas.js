@@ -42,10 +42,23 @@ async function resolverVehiculo(body) {
 router.post('/', requireAuth, handler(async (req, res) => {
     const body = req.body || {};
 
+    // 1. Identificamos al cliente (y obtenemos su ID y datos para la respuesta final)
     const cliente = await resolverCliente(req.user, body);
-    if (!cliente.activo) {
-        throw new HttpError(400, 'El cliente se encuentra inactivo y no puede realizar alquileres');
+
+    // --- REQUERIMIENTO CÁTEDRA: Validaciones con RPC booleanos separados ---
+    
+    // Paso 1a: Validar explícitamente que el cliente exista en la base de datos
+    const checkExistencia = await call(customerClient, 'CheckCustomerExists', { id: cliente.id });
+    if (!checkExistencia.existe) {
+        throw new HttpError(404, 'Validación RPC: El cliente no existe en la base de datos');
     }
+
+    // Paso 1b: Validar explícitamente que el cliente esté activo
+    const checkActivo = await call(customerClient, 'IsCustomerActive', { id: cliente.id });
+    if (!checkActivo.activo) {
+        throw new HttpError(400, 'Validación RPC: El cliente se encuentra inactivo y no puede realizar alquileres');
+    }
+    // ----------------------------------------------------------------------
 
     const vehiculo = await resolverVehiculo(body);
     if (!vehiculo.activo) {
