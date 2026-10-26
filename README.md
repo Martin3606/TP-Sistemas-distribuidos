@@ -41,3 +41,7 @@ Una vez que levantes el frontend, puedes probar el sistema con estos usuarios:
 | :--- | :--- | :--- |
 | **Administrador** | `admin@rentar.com` | `admin123` |
 | **Cliente** | `juan.perez@mail.com` | `cliente123` |
+
+## 📚 Documentación de APIs (Hito 2)
+- **API REST (Swagger):** Disponible de forma interactiva en `http://localhost:8000/api-docs`.
+- **GraphQL:** Esquema documentado y consola interactiva en `http://localhost:8000/graphql`.
