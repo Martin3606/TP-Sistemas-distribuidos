@@ -16,7 +16,10 @@ const PORT = process.env.PORT || 8000;
 app.use(cors());
 app.use(express.json()); // Middleware para JSON
 
-// Autenticación
+// Iniciamos la web de Swagger ACÁ, antes de las rutas REST y de GraphQL
+swaggerDocs(app);
+
+// Autenticación (el frontend llama a /auth/login; se acepta también /api/auth/login)
 app.use('/auth', require('./src/routes/auth'));
 app.use('/api/auth', require('./src/routes/auth'));
 
@@ -39,6 +42,7 @@ async function startApolloServer() {
     await server.start();
 
     app.use('/graphql', expressMiddleware(server, {
+        // El JWT se valida aquí; cada resolver exige que exista `user`
         context: async ({ req }) => {
             try {
                 return { user: usuarioDesdeHeader(req.headers.authorization), cache: {} };
@@ -52,8 +56,6 @@ async function startApolloServer() {
         app.listen(PORT, () => {
             console.log(`API Gateway corriendo en puerto ${PORT}`);
             console.log(`GraphQL disponible en http://localhost:${PORT}/graphql`);
-            // Iniciamos la web de Swagger
-            swaggerDocs(app); 
         });
     }
 }
