@@ -7,11 +7,17 @@ const typeDefs = require('./src/graphql/typeDefs');
 const resolvers = require('./src/graphql/resolvers');
 const { usuarioDesdeHeader } = require('./src/utils/auth');
 
+// Importamos nuestra nueva configuración de Swagger
+const swaggerDocs = require('./src/swagger');
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
 app.use(cors());
 app.use(express.json()); // Middleware para JSON
+
+// Iniciamos la web de Swagger ACÁ, antes de las rutas REST y de GraphQL
+swaggerDocs(app);
 
 // Autenticación (el frontend llama a /auth/login; se acepta también /api/auth/login)
 app.use('/auth', require('./src/routes/auth'));

@@ -5,27 +5,99 @@ const { handler, HttpError } = require('../utils/errors');
 const { requireAuth, requireAdmin, esCliente } = require('../utils/auth');
 const { clienteRest } = require('../utils/mappers');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Cliente:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           description: ID interno del cliente
+ *         documento:
+ *           type: string
+ *           description: DNI del cliente
+ *         nombre:
+ *           type: string
+ *         apellido:
+ *           type: string
+ *         email:
+ *           type: string
+ *         telefono:
+ *           type: string
+ *         fecha_nacimiento:
+ *           type: string
+ *           example: "1990-05-15"
+ *         activo:
+ *           type: boolean
+ */
+
 const idParam = (req) => {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) throw new HttpError(400, 'El identificador es inválido');
     return id;
 };
 
-// Un CLIENTE solo puede ver / editar su propio registro (pantalla Mi Perfil)
+// Un CLIENTE solo puede ver / editar su propio registro
 function validarPropietario(req, id) {
     if (esCliente(req.user) && req.user.cliente_id !== id) {
         throw new HttpError(403, 'No está autorizado para acceder a los datos de otro cliente');
     }
 }
 
-// GET /api/clientes?solo_activos=true (solo Admin)
+/**
+ * @swagger
+ * /api/clientes:
+ *   get:
+ *     summary: Obtiene el padrón de clientes
+ *     tags: [Clientes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: solo_activos
+ *         schema:
+ *           type: boolean
+ *         description: Si es true, omite los clientes dados de baja
+ *     responses:
+ *       200:
+ *         description: Lista de clientes obtenida con éxito
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Cliente'
+ */
 router.get('/', requireAdmin, handler(async (req, res) => {
     const solo_activos = String(req.query.solo_activos).toLowerCase() === 'true';
     const r = await call(customerClient, 'ListCustomers', { solo_activos });
     res.json((r.clientes || []).map(clienteRest));
 }));
 
-// GET /api/clientes/:id (Admin o el propio cliente)
+/**
+ * @swagger
+ * /api/clientes/{id}:
+ *   get:
+ *     summary: Obtiene los datos de un cliente por su ID
+ *     tags: [Clientes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cliente encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Cliente'
+ */
 router.get('/:id', requireAuth, handler(async (req, res) => {
     const id = idParam(req);
     validarPropietario(req, id);
@@ -33,7 +105,24 @@ router.get('/:id', requireAuth, handler(async (req, res) => {
     res.json(clienteRest(r.cliente));
 }));
 
-// POST /api/clientes (solo Admin)
+/**
+ * @swagger
+ * /api/clientes:
+ *   post:
+ *     summary: Crea un nuevo cliente (Solo Admin)
+ *     tags: [Clientes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Cliente'
+ *     responses:
+ *       201:
+ *         description: Cliente registrado con éxito
+ */
 router.post('/', requireAdmin, handler(async (req, res) => {
     const b = req.body || {};
     const r = await call(customerClient, 'CreateCustomer', {
@@ -47,7 +136,30 @@ router.post('/', requireAdmin, handler(async (req, res) => {
     res.status(201).json(clienteRest(r.cliente));
 }));
 
-// PUT /api/clientes/:id (Admin o el propio cliente). Actualización parcial.
+/**
+ * @swagger
+ * /api/clientes/{id}:
+ *   put:
+ *     summary: Modifica parcialmente los datos de un cliente
+ *     tags: [Clientes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Cliente'
+ *     responses:
+ *       200:
+ *         description: Cliente actualizado
+ */
 router.put('/:id', requireAuth, handler(async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) throw new HttpError(400, 'El identificador es inválido');
@@ -55,11 +167,9 @@ router.put('/:id', requireAuth, handler(async (req, res) => {
 
     const b = req.body || {};
     const peticion = { id };
-    // Campo ausente = se conserva. null / "" = se borra (solo válido para teléfono y fecha).
     ['nombre', 'apellido', 'email', 'telefono', 'fecha_nacimiento'].forEach((campo) => {
         if (b[campo] !== undefined) peticion[campo] = b[campo] === null ? '' : String(b[campo]);
     });
-    // Documento y estado solo los cambia un Admin
     if (!esCliente(req.user)) {
         if (b.documento !== undefined) peticion.documento = String(b.documento);
         if (typeof b.activo === 'boolean') peticion.activo = b.activo;
@@ -69,7 +179,24 @@ router.put('/:id', requireAuth, handler(async (req, res) => {
     res.json(clienteRest(r.cliente));
 }));
 
-// DELETE /api/clientes/:id (baja lógica, solo Admin)
+/**
+ * @swagger
+ * /api/clientes/{id}:
+ *   delete:
+ *     summary: Da de baja lógica a un cliente (Solo Admin)
+ *     tags: [Clientes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Cliente inactivo
+ */
 router.delete('/:id', requireAdmin, handler(async (req, res) => {
     const r = await call(customerClient, 'DeactivateCustomer', { id: idParam(req) });
     res.json(clienteRest(r.cliente));

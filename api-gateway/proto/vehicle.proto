@@ -4,20 +4,35 @@ package rentar.vehicle.v1;
 
 import "google/protobuf/timestamp.proto";
 
+// Servicio que gestiona el catalogo y el ABM de la flota de vehículos
 service VehicleService {
+  // Devuelve la lista de vehiculos, se usa tanto en el catálogo (solo activos) como en el panel Admin (todos)
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
+  
+  // Trae el detalle de un vehiculo por su ID
   rpc GetVehicle(GetVehicleRequest) returns (VehicleResponse);
-  // Busqueda por patente (la usan las pantallas de reserva)
+  
+  // Trae un vehiculo por su patente. Usado por la pantalla de creacion de reservas
   rpc GetVehicleByPlate(GetVehicleByPlateRequest) returns (VehicleResponse);
+  
+  // Motor de busqueda principal: evalua qué vehiculos estan libres en un rango de fechas especifico
+  // Cruza datos con las reservas confirmadas para evitar solapamientos
   rpc CheckAvailability(CheckAvailabilityRequest) returns (ListVehiclesResponse);
 
+  // Da de alta un nuevo auto en la flota
   rpc CreateVehicle(CreateVehicleRequest) returns (VehicleResponse);
+  
+  // Actualiza las caracteristicas o precio de un vehículo existente
   rpc UpdateVehicle(UpdateVehicleRequest) returns (VehicleResponse);
+  
+  // Baja logica del vehiculo. Lo oculta del catalogo pero mantiene su historial de reservas
   rpc DeactivateVehicle(DeactivateVehicleRequest) returns (VehicleResponse);
 
+  // Modifica el estado operativo del vehiculo (ej: pasa de DISPONIBLE a EN_ALQUILER)
   rpc UpdateVehicleStatus(UpdateVehicleStatusRequest) returns (VehicleResponse);
 }
 
+// Categorias de vehiculos disponibles para filtrar en el catalogo
 enum VehicleType {
   VEHICLE_TYPE_UNSPECIFIED = 0;
   VEHICLE_TYPE_SEDAN = 1;
@@ -27,13 +42,15 @@ enum VehicleType {
   VEHICLE_TYPE_HATCHBACK = 5;
 }
 
+// Maquina de estados operativa del vehiculo
 enum VehicleStatus {
   VEHICLE_STATUS_UNSPECIFIED = 0;
-  VEHICLE_STATUS_DISPONIBLE = 1;
-  VEHICLE_STATUS_RESERVADO = 2;
-  VEHICLE_STATUS_EN_ALQUILER = 3;
+  VEHICLE_STATUS_DISPONIBLE = 1; // Listo para ser reservado
+  VEHICLE_STATUS_RESERVADO = 2;  // Reservado a futuro
+  VEHICLE_STATUS_EN_ALQUILER = 3; // Actualmente en uso por un cliente
 }
 
+// Entidad principal del vehiculo
 message Vehicle {
   int32 id = 1;
   string patente = 2;
@@ -47,6 +64,7 @@ message Vehicle {
   bool activo = 10;
 }
 
+// Parametros opcionales para acotar los resultados del catalogo
 message VehicleFilter {
   VehicleType tipo_vehiculo = 1;
   string marca = 2;

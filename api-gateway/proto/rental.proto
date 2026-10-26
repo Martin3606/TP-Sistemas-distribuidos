@@ -2,35 +2,50 @@ syntax = "proto3";
 
 package rentar.rental.v1;
 
-// Opciones solo para generar clases Java (no alteran el contrato)
+// Opciones de compilacion para que Java genere los paquetes correctamente
 option java_multiple_files = true;
 option java_package = "com.rentar.rentalservice.proto";
 
 import "google/protobuf/timestamp.proto";
 
+// Servicio nucleo del negocio. Orquesta el ciclo de vida completo de un alquiler/reserva
 service RentalService {
+  // Impacta una nueva reserva
+  // Regla de negocio: Guarda un "snapshot" del precio diario para que la reserva 
+  // no cambie de valor aunque el administrador le suba el precio al auto en el futuro
   rpc CreateRental(CreateRentalRequest) returns (RentalResponse);
+  
+  // Cancela una reserva existente 
+  // Regla de negocio: Solo permitida si la fecha de inicio es a futuro.
   rpc CancelRental(CancelRentalRequest) returns (RentalResponse);
+  
+  // Consulta el detalle de una reserva por su ID
   rpc GetRentalById(GetRentalByIdRequest) returns (RentalResponse);
+  
+  // Trae todo el historial de alquileres de un cliente especifico
   rpc ListRentalsByCustomer(ListRentalsByCustomerRequest) returns (ListRentalsResponse);
+  
+  // Valida internamente si un auto específico esta libre en esas fechas
   rpc CheckAvailability(CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
 }
 
+// Maquina de estados de una reserva
 enum RentalState {
   RENTAL_STATE_UNSPECIFIED = 0;
-  RENTAL_STATE_CONFIRMADA = 1;
-  RENTAL_STATE_CANCELADA = 2;
-  RENTAL_STATE_FINALIZADA = 3;
+  RENTAL_STATE_CONFIRMADA = 1; // Reserva vigente y a la espera del retiro
+  RENTAL_STATE_CANCELADA = 2;  // Reserva dada de baja antes de usarse
+  RENTAL_STATE_FINALIZADA = 3; // Alquiler completado y auto devuelto
 }
 
+// Entidad que representa la transaccion del alquiler
 message Rental {
   int32 id = 1;
   int32 cliente_id = 2;
   int32 vehiculo_id = 3;
   google.protobuf.Timestamp fecha_inicio = 4;
   google.protobuf.Timestamp fecha_fin = 5;
-  int64 precio_diario_snapshot_centavos = 6;
-  int64 importe_total_centavos = 7;
+  int64 precio_diario_snapshot_centavos = 6; // Foto del precio al momento de confirmar
+  int64 importe_total_centavos = 7; // Calculado automáticamente (días * precio_snapshot)
   RentalState estado = 8;
 }
 
