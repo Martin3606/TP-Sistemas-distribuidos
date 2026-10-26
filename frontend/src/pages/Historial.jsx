@@ -87,7 +87,7 @@ function Historial() {
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
       <h1>Historial General de Alquileres</h1>
       <p style={{ color: "#555" }}>
-        Consulta el historial de alquileres por cliente mediante GraphQL (`:8080/graphql`).
+        Seleccione un cliente para visualizar su registro histórico de reservas y alquileres asociados.
       </p>
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}

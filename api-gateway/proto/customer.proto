@@ -2,26 +2,44 @@ syntax = "proto3";
 
 package rentar.customer.v1;
 
+// Servicio encargado de gestionar todo lo relacionado con los clientes y su autenticacion
 service CustomerService {
+  // Valida las credenciales de ingreso y devuelve un token junto con el rol del usuario
   rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  
+  // Trae el padron de clientes. Permite filtrar para traer unicamente los habilitados (activos)
   rpc ListCustomers(ListCustomersRequest) returns (ListCustomersResponse);
+  
+  // Obtiene la ficha completa de un cliente usando su ID interno de base de datos
   rpc GetCustomer(GetCustomerRequest) returns (CustomerResponse);
-  // Busqueda por documento (DNI), la usa la pantalla de reservas del admin
+  
+  // Busca un cliente por su DNI
   rpc GetCustomerByDocument(GetCustomerByDocumentRequest) returns (CustomerResponse);
+  
+  // Registra un nuevo cliente en el sistema
   rpc CreateCustomer(CreateCustomerRequest) returns (CustomerResponse);
+  
+  // Actualiza datos de un cliente
+  // Es una actualización parcial, solo modifica los campos que se envian
   rpc UpdateCustomer(UpdateCustomerRequest) returns (CustomerResponse);
-  // Baja logica (activo = false)
+  
+  // Aplica una baja logica al cliente (activo = false), no borramos registros fisicamente
   rpc DeactivateCustomer(GetCustomerRequest) returns (CustomerResponse);
+  
+  // Verifica si el cliente existe en la BD. Devuelve un booleano
   rpc CheckCustomerExists(GetCustomerRequest) returns (CheckCustomerExistsResponse);
+  // Verifica si el cliente está habilitado para operar. Devuelve un booleano
   rpc IsCustomerActive(GetCustomerRequest) returns (IsCustomerActiveResponse);
 }
 
+// Roles de seguridad para el control de acceso en el Gateway
 enum Role {
   ROLE_UNSPECIFIED = 0;
   ROLE_ADMIN = 1;
   ROLE_CLIENTE = 2;
 }
 
+// Entidad principal del cliente con su informacion de contacto y estado
 message Customer {
   int32 id = 1;
   string documento = 2;
@@ -29,8 +47,8 @@ message Customer {
   string apellido = 4;
   string email = 5;
   string telefono = 6;
-  bool activo = 7;
-  string fecha_nacimiento = 8; // YYYY-MM-DD, vacio si no se cargo
+  bool activo = 7; // Controla si el cliente puede o no realizar nuevas reservas
+  string fecha_nacimiento = 8; // Formato esperado: YYYY-MM-DD
 }
 
 message AuthenticateRequest {
@@ -39,16 +57,16 @@ message AuthenticateRequest {
 }
 
 message AuthenticateResponse {
-  string token = 1;
+  string token = 1; // JWT para mantener la sesion
   int32 user_id = 2;
   string email = 3;
   Role rol = 4;
-  optional int32 cliente_id = 5;
-  string nombre = 6; // nombre para mostrar en la interfaz
+  optional int32 cliente_id = 5; // ID del cliente asociado
+  string nombre = 6; // Nombre para mostrar en la barra de navegación del frontend
 }
 
 message ListCustomersRequest {
-  bool solo_activos = 1; 
+  bool solo_activos = 1; // Si es true, omite a los clientes dados de baja
 }
 
 message ListCustomersResponse {
@@ -65,11 +83,11 @@ message CreateCustomerRequest {
   string apellido = 3;
   string email = 4;
   string telefono = 5;
-  string fecha_nacimiento = 6; // YYYY-MM-DD, opcional
+  string fecha_nacimiento = 6;
 }
 
-// Actualizacion parcial: un campo 'optional' ausente se conserva;
-// presente (aunque sea "") se aplica. telefono y fecha_nacimiento "" los borran.
+// Mensaje para modificar clientes
+// Uso de 'optional': Si un campo no se envía, conserva su valor actual. Si se envía vacío (""), se blanquea
 message UpdateCustomerRequest {
   int32 id = 1;
   optional string nombre = 2;
