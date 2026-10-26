@@ -200,6 +200,8 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
                 .setPrecioDiarioSnapshotCentavos(aCentavos(r.getPrecioDiarioSnapshot()))
                 .setImporteTotalCentavos(aCentavos(r.getImporteTotal()))
                 .setEstado(RentalState.valueOf("RENTAL_STATE_" + r.getEstado().name()))
+                .setResultadoMantenimiento(MaintenanceResult.valueOf(
+                        "MAINTENANCE_RESULT_" + r.getResultadoMantenimiento().name()))
                 .build();
     }
 }

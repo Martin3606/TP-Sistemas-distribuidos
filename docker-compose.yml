@@ -1,6 +1,42 @@
 # Rentar - Hito 2 (microservicios)
 # MySQL se publica en el puerto 3307 del host (el 3306 queda libre para un MySQL local).
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rentar-rabbitmq
+    hostname: rentar-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rentar}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rentar_dev}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - rentar-network
+
+  rabbitmq-topology-init:
+    build:
+      context: ./rabbitmq
+    container_name: rentar-rabbitmq-topology-init
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-rentar}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-rentar_dev}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - rentar-network
+
   mysql-db:
     image: mysql:8.0
     container_name: rentar-mysql
@@ -96,3 +132,4 @@ networks:
 
 volumes:
   db_data:
+  rabbitmq_data:

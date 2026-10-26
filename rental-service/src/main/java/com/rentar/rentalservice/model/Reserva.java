@@ -38,6 +38,10 @@ public class Reserva {
     @Column(name = "estado", nullable = false)
     private EstadoReserva estado = EstadoReserva.CONFIRMADA;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "resultado_mantenimiento", nullable = false)
+    private ResultadoMantenimiento resultadoMantenimiento = ResultadoMantenimiento.PENDIENTE;
+
     public Integer getId() { return id; }
     public Integer getClienteId() { return clienteId; }
     public void setClienteId(Integer clienteId) { this.clienteId = clienteId; }
@@ -53,4 +57,8 @@ public class Reserva {
     public void setImporteTotal(BigDecimal importeTotal) { this.importeTotal = importeTotal; }
     public EstadoReserva getEstado() { return estado; }
     public void setEstado(EstadoReserva estado) { this.estado = estado; }
+    public ResultadoMantenimiento getResultadoMantenimiento() { return resultadoMantenimiento; }
+    public void setResultadoMantenimiento(ResultadoMantenimiento resultadoMantenimiento) {
+        this.resultadoMantenimiento = resultadoMantenimiento;
+    }
 }
