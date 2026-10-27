@@ -1,4 +1,4 @@
-# Rentar - Hito 2 (microservicios)
+# Rentar - Hito 3 (microservicios y eventos)
 # MySQL se publica en el puerto 3307 del host (el 3306 queda libre para un MySQL local).
 services:
   rabbitmq:
@@ -84,11 +84,40 @@ services:
       - DB_PASSWORD=root
       - DB_NAME=db_vehiculos
       - GRPC_PORT=50051
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
     networks:
       - rentar-network
     depends_on:
       mysql-db:
         condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
+
+  verification-service:
+    build:
+      context: ./verification-service
+    container_name: verification-service
+    environment:
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_vehiculos
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
+      - VERIFICATION_DELAY_SECONDS=${VERIFICATION_DELAY_SECONDS:-2}
+    networks:
+      - rentar-network
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
 
   customer-service:
     build:

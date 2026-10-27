@@ -22,7 +22,7 @@ Los eventos se publican en el exchange durable `rentar.events` (tipo `topic`). C
 | `vehiculos.externos.registrados` | Vehicle Service al aceptar la solicitud | Verification Service, validación de patente y validación de titularidad, cada una en su propia cola | `vehiculoExternoId`, `clienteId`, `documento`, `patente` |
 | `vehiculos.externos.validacion.patente` | Verification Service | Vehicle Service | `vehiculoExternoId`, `patente`, `resultado`: `VALIDADO` o `RECHAZADO` |
 | `vehiculos.externos.validacion.titularidad` | Verification Service | Vehicle Service | `vehiculoExternoId`, `clienteId`, `documento`, `patente`, `resultado`: `VALIDADO` o `RECHAZADO` |
-| `vehiculos.externos.validacion.completada` | Vehicle Service cuando ambas validaciones fueron satisfactorias | Sin consumidor definido en el alcance actual | `vehiculoExternoId` |
+| `vehiculos.externos.validacion.completada` | Vehicle Service cuando ambas validaciones fueron satisfactorias | Vehicle Service: finaliza la solicitud e incorpora el vehículo | `vehiculoExternoId` |
 | `reserva.confirmada` | Rental Service después de confirmar la reserva | Maintenance Service | `reservaId`, `vehiculoId`, `fechaInicio`, `fechaFin` |
 | `mantenimiento.resultado` | Maintenance Service | Rental Service | `reservaId`, `vehiculoId`, `resultado`: `REALIZADO` o `NO_REALIZADO` |
 

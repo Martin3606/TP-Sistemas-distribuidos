@@ -101,6 +101,7 @@ CREATE TABLE IF NOT EXISTS vehiculo_externo_solicitud (
     precio_diario   DECIMAL(10,2) NOT NULL,
     estado          ENUM('PENDIENTE','RECHAZADO','INCORPORADO') NOT NULL DEFAULT 'PENDIENTE',
     vehiculo_id     INT NULL,
+    completacion_publicada BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT uq_vehiculo_externo_patente UNIQUE (patente),
@@ -109,6 +110,14 @@ CREATE TABLE IF NOT EXISTS vehiculo_externo_solicitud (
     CONSTRAINT chk_vehiculo_externo_precio CHECK (precio_diario > 0),
     CONSTRAINT chk_vehiculo_externo_anio CHECK (anio >= 1990),
     INDEX idx_vehiculo_externo_cliente_estado (cliente_id, estado)
+) ENGINE=InnoDB;
+
+-- Registro de idempotencia: cada consumidor deduplica por eventId.
+CREATE TABLE IF NOT EXISTS evento_procesado (
+    consumidor  VARCHAR(80) NOT NULL,
+    event_id    CHAR(36) NOT NULL,
+    procesado_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (consumidor, event_id)
 ) ENGINE=InnoDB;
 
 -- Una fila por tipo de validación, vinculada a la solicitud para correlacionar resultados.

@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS vehiculo_externo_solicitud (
     precio_diario   DECIMAL(10,2) NOT NULL,
     estado          ENUM('PENDIENTE','RECHAZADO','INCORPORADO') NOT NULL DEFAULT 'PENDIENTE',
     vehiculo_id     INT NULL,
+    completacion_publicada BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT uq_vehiculo_externo_patente UNIQUE (patente),
@@ -97,6 +98,22 @@ CREATE TABLE IF NOT EXISTS vehiculo_externo_solicitud (
     CONSTRAINT chk_vehiculo_externo_anio CHECK (anio >= 1990),
     INDEX idx_vehiculo_externo_cliente_estado (cliente_id, estado)
 ) ENGINE=InnoDB;
+
+-- Admite bases que ya tenían solicitudes externas antes de esta columna.
+SET @columna_existe = (
+    SELECT COUNT(*) FROM information_schema.columns
+     WHERE table_schema = 'db_vehiculos'
+       AND table_name = 'vehiculo_externo_solicitud'
+       AND column_name = 'completacion_publicada'
+);
+SET @ddl_columna = IF(
+    @columna_existe = 0,
+    'ALTER TABLE db_vehiculos.vehiculo_externo_solicitud ADD COLUMN completacion_publicada BOOLEAN NOT NULL DEFAULT FALSE',
+    'SELECT 1'
+);
+PREPARE instruccion_columna FROM @ddl_columna;
+EXECUTE instruccion_columna;
+DEALLOCATE PREPARE instruccion_columna;
 
 CREATE TABLE IF NOT EXISTS vehiculo_externo_validacion (
     id                    INT AUTO_INCREMENT PRIMARY KEY,
@@ -126,4 +143,12 @@ CREATE TABLE IF NOT EXISTS solicitud_mantenimiento (
     CONSTRAINT uq_mantenimiento_reserva UNIQUE (reserva_id),
     CONSTRAINT chk_mantenimiento_fechas CHECK (fecha_fin > fecha_inicio),
     INDEX idx_mantenimiento_resultado (resultado, solicitado_at)
+) ENGINE=InnoDB;
+
+USE db_vehiculos;
+CREATE TABLE IF NOT EXISTS evento_procesado (
+    consumidor  VARCHAR(80) NOT NULL,
+    event_id    CHAR(36) NOT NULL,
+    procesado_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (consumidor, event_id)
 ) ENGINE=InnoDB;
