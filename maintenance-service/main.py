@@ -108,8 +108,7 @@ def main():
 
     # Consumir de la cola específica de mantenimiento (topología del Hito 3)
     queue_name = 'q.maintenance.reservation.confirmed'
-    channel.queue_declare(queue=queue_name, durable=True)
-    channel.queue_bind(exchange='rentar.events', queue=queue_name, routing_key='reserva.confirmada')
+    channel.queue_declare(queue=queue_name, passive=True)
 
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(queue=queue_name, on_message_callback=procesar_mantenimiento)

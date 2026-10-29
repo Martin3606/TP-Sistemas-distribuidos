@@ -172,11 +172,17 @@ services:
       - DB_NAME=db_alquileres
       - GRPC_PORT=50053
       - APP_ZONE=America/Argentina/Buenos_Aires
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER:-rentar}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
     networks:
       - rentar-network
     depends_on:
       mysql-db:
         condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
 
 networks:
   rentar-network:
