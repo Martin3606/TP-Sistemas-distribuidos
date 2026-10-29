@@ -119,6 +119,29 @@ services:
       rabbitmq-topology-init:
         condition: service_completed_successfully
 
+  maintenance-service:
+    build:
+      context: ./maintenance-service
+    container_name: maintenance-service
+    environment:
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_mantenimiento
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
+      - MAINTENANCE_DELAY_SECONDS=3 # Para simular el tiempo de procesamiento
+    networks:
+      - rentar-network
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully      
+
   customer-service:
     build:
       context: ./customer-service
