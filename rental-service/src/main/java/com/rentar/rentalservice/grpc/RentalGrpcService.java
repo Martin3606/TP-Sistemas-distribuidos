@@ -1,5 +1,7 @@
 package com.rentar.rentalservice.grpc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.Timestamp;
 import com.rentar.rentalservice.model.EstadoReserva;
 import com.rentar.rentalservice.model.Reserva;
@@ -10,6 +12,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -21,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -38,15 +42,20 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
 
     private final ReservaRepository repo;
     private final TransactionTemplate tx;
+    private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
     /** Zona horaria con la que se interpretan las fechas "de pared" (sin zona) que carga el usuario. */
     private final ZoneId zona;
     /** Serializa altas para que dos pedidos simultaneos no reserven el mismo auto. */
     private final Object lockAltas = new Object();
 
     public RentalGrpcService(ReservaRepository repo, PlatformTransactionManager txManager,
+                             RabbitTemplate rabbitTemplate, ObjectMapper objectMapper,
                              @Value("${rental.zone:America/Argentina/Buenos_Aires}") String zona) {
         this.repo = repo;
         this.tx = new TransactionTemplate(txManager);
+        this.rabbitTemplate = rabbitTemplate;
+        this.objectMapper = objectMapper;
         this.zona = ZoneId.of(zona);
     }
 
@@ -72,7 +81,6 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
                 throw error(Status.INVALID_ARGUMENT,
                         "La fecha de fin debe ser posterior a la fecha de inicio");
 
-            // Dias = duracion redondeada hacia arriba, minimo 1 (misma regla del Hito 1)
             long minutos = Duration.between(inicio, fin).toMinutes();
             long dias = Math.max(1, (long) Math.ceil(minutos / (60.0 * 24.0)));
             BigDecimal precio = BigDecimal.valueOf(req.getPrecioDiarioSnapshotCentavos(), 2);
@@ -93,11 +101,28 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
                     r.setPrecioDiarioSnapshot(precio);
                     r.setImporteTotal(importe);
                     r.setEstado(EstadoReserva.CONFIRMADA);
-                    return RentalResponse.newBuilder().setRental(aProto(repo.save(r))).build();
+                    
+                    Reserva guardada = repo.save(r);
+
+                    // Publicar evento asíncrono para mantenimiento preventivo
+                    try {
+                        ObjectNode evento = objectMapper.createObjectNode();
+                        evento.put("reservaId", guardada.getId());
+                        evento.put("vehiculoId", guardada.getVehiculoId());
+                        evento.put("fechaInicio", guardada.getFechaInicio().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+                        evento.put("fechaFin", guardada.getFechaFin().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+
+                        rabbitTemplate.convertAndSend("rentar.events", "reserva.confirmada", evento.toString());
+                        log.info("Evento reserva.confirmada publicado exitosamente para reserva ID: {}", guardada.getId());
+                    } catch (Exception e) {
+                        log.error("Fallo al publicar el evento de reserva confirmada. El flujo principal continúa.", e);
+                    }
+
+                    return RentalResponse.newBuilder().setRental(aProto(guardada)).build();
                 });
             }
         });
-    }
+    } 
 
     @Override
     public void cancelRental(CancelRentalRequest req, StreamObserver<RentalResponse> obs) {
@@ -173,7 +198,6 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
         return status.withDescription(mensaje).asRuntimeException();
     }
 
-    /** "Ahora" en la zona del negocio: las fechas guardadas son hora de pared sin zona. */
     private LocalDateTime ahora() {
         return LocalDateTime.now(zona);
     }
@@ -191,6 +215,10 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
     }
 
     private static Rental aProto(Reserva r) {
+        String resultadoMantenimiento = (r.getResultadoMantenimiento() != null) 
+                                        ? r.getResultadoMantenimiento().name() 
+                                        : "PENDIENTE";
+
         return Rental.newBuilder()
                 .setId(r.getId())
                 .setClienteId(r.getClienteId())
@@ -200,8 +228,7 @@ public class RentalGrpcService extends RentalServiceGrpc.RentalServiceImplBase {
                 .setPrecioDiarioSnapshotCentavos(aCentavos(r.getPrecioDiarioSnapshot()))
                 .setImporteTotalCentavos(aCentavos(r.getImporteTotal()))
                 .setEstado(RentalState.valueOf("RENTAL_STATE_" + r.getEstado().name()))
-                .setResultadoMantenimiento(MaintenanceResult.valueOf(
-                        "MAINTENANCE_RESULT_" + r.getResultadoMantenimiento().name()))
+                .setResultadoMantenimiento(MaintenanceResult.valueOf("MAINTENANCE_RESULT_" + resultadoMantenimiento))
                 .build();
     }
 }
