@@ -104,6 +104,14 @@ function clienteGql(c) {
 function reservaRest(r) {
     const ini = r.fecha_inicio ? Number(r.fecha_inicio.seconds) : 0;
     const fin = r.fecha_fin ? Number(r.fecha_fin.seconds) : 0;
+    
+    // Soporta tanto resultado_mantenimiento (del proto) como estado_mantenimiento
+    const crudoMantenimiento = r.resultado_mantenimiento || r.estado_mantenimiento;
+    const mantenimientoLimpio = quitar(
+        quitar(crudoMantenimiento, 'MAINTENANCE_RESULT_'),
+        'MAINTENANCE_STATUS_'
+    );
+
     return {
         id: r.id,
         cliente_id: r.cliente_id,
@@ -115,7 +123,7 @@ function reservaRest(r) {
         estado: quitar(r.estado, 'RENTAL_STATE_'),
         cantidad_dias: cantidadDias(ini, fin),
         // NUEVO CAMPO HITO 3
-        estado_mantenimiento: quitar(r.estado_mantenimiento, 'MAINTENANCE_STATUS_')
+        estado_mantenimiento: mantenimientoLimpio
     };
 }
 
@@ -131,7 +139,7 @@ function reservaGql(r) {
         importeTotal: x.importe_total,
         estado: x.estado,
         cantidadDias: x.cantidad_dias,
-        //NUEVO CAMPO HITO 3
+        // NUEVO CAMPO HITO 3
         estadoMantenimiento: x.estado_mantenimiento
     };
 }

@@ -53,11 +53,10 @@ function Catalogo() {
     const inicio = new Date(fechaInicio);
     const fin = new Date(fechaFin);
 
-    if (inicio >= fin) {
-      setError("La fecha de inicio debe ser anterior a la fecha de finalización.");
-      setCargando(false);
+    if (isNaN(inicio.getTime()) || isNaN(fin.getTime()) || fin <= inicio) {
+      setError('La fecha de finalización debe ser posterior a la fecha de inicio.');
       return;
-    }
+}
 
     const variables = {
       filtro: {

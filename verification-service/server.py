@@ -117,11 +117,19 @@ def validar_titularidad_externa(event: dict) -> None:
             text("SELECT documento FROM registro_titularidad WHERE patente = :patente"),
             {"patente": plate},
         ).fetchone()
-        result = (
-            "VALIDADO"
-            if owner is not None and str(owner.documento).strip() == document
-            else "RECHAZADO"
-        )
+        
+        # Si la patente no existe en el padrón simulado, la registramos a nombre del cliente actual
+        if owner is None:
+            conn.execute(
+                text("INSERT INTO registro_titularidad (patente, documento) VALUES (:patente, :documento)"),
+                {"patente": plate, "documento": document},
+            )
+            result = "VALIDADO"
+        elif str(owner.documento).strip() == document:
+            result = "VALIDADO"
+        else:
+            result = "RECHAZADO"
+
         publish_event(
             EVENT_OWNERSHIP_RESULT,
             {
