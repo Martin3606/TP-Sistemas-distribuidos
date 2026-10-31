@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { vehicleClient, call } = require('../grpc/clients');
+const { vehicleClient, customerClient, call } = require('../grpc/clients');
 const { handler, HttpError } = require('../utils/errors');
 const { requireAuth, requireAdmin } = require('../utils/auth');
 const { vehiculoRest, aCentavos, tipoAProto } = require('../utils/mappers');
@@ -64,6 +64,79 @@ router.put('/:id', requireAdmin, handler(async (req, res) => {
 router.delete('/:id', requireAdmin, handler(async (req, res) => {
     const r = await call(vehicleClient, 'DeactivateVehicle', { id: idParam(req) });
     res.json(vehiculoRest(r.vehiculo));
+}));
+
+
+// ==========================================
+// NUEVAS RUTAS HITO 3: VEHÍCULOS EXTERNOS
+// ==========================================
+
+// GET /api/vehiculos/externos/solicitudes
+// Devuelve las solicitudes de incorporación de vehículos del cliente logueado
+router.get('/externos/solicitudes', requireAuth, handler(async (req, res) => {
+    const clienteId = req.user.cliente_id;
+    if (!clienteId) {
+        throw new HttpError(403, 'Solo los clientes registrados pueden consultar sus vehículos');
+    }
+
+    // Llamamos al Vehicle Service usando el método definido en vehicle.proto
+    const response = await call(vehicleClient, 'ListExternalVehicleRequests', { cliente_id: clienteId });
+    
+    // Mapeamos la respuesta para devolver un JSON limpio al frontend
+    const solicitudesRest = (response.solicitudes || []).map(solicitud => ({
+        id: solicitud.id,
+        patente: solicitud.patente,
+        marca: solicitud.marca,
+        modelo: solicitud.modelo,
+        anio: solicitud.anio,
+        estado: solicitud.estado,
+        resultado_patente: solicitud.resultado_patente,
+        resultado_titularidad: solicitud.resultado_titularidad,
+        vehiculo_id: solicitud.vehiculo_id
+    }));
+
+    res.json(solicitudesRest);
+}));
+
+// POST /api/vehiculos/externos
+// Permite a un cliente solicitar el alta de su vehículo en la plataforma
+router.post('/externos', requireAuth, handler(async (req, res) => {
+    const clienteId = req.user.cliente_id;
+    if (!clienteId) {
+        throw new HttpError(403, 'Solo los clientes registrados pueden dar de alta un vehículo');
+    }
+
+    if (!req.body.patente) {
+        throw new HttpError(400, 'La patente es requerida');
+    }
+
+    // 1. Obtener el DNI del cliente desde el Customer Service
+    const customerData = await call(customerClient, 'GetCustomer', { id: clienteId });
+    const dniTitular = customerData.cliente.documento;
+    
+    if (!dniTitular) {
+        throw new HttpError(500, 'El cliente no tiene un documento registrado válido');
+    }
+
+    // 2. Armar la solicitud usando la función datosVehiculo para reusar las validaciones
+    const datosProcesados = datosVehiculo(req.body);
+    
+    const requestArgs = {
+        cliente_id: clienteId,
+        documento: dniTitular,
+        patente: req.body.patente,
+        ...datosProcesados
+    };
+
+    // 3. Llamar al Vehicle Service para registrar la solicitud asíncrona
+    const response = await call(vehicleClient, 'RegisterExternalVehicle', requestArgs);
+
+    // Devolvemos el estado al frontend
+    res.status(201).json({
+        mensaje: 'Solicitud de verificación registrada exitosamente',
+        solicitud_id: response.solicitud.id,
+        estado: response.solicitud.estado
+    });
 }));
 
 module.exports = router;
