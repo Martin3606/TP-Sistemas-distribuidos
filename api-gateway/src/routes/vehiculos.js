@@ -43,23 +43,26 @@ router.get('/:id', requireAuth, handler(async (req, res) => {
 
 // POST /api/vehiculos (solo Admin)
 router.post('/', requireAdmin, handler(async (req, res) => {
-    const r = await call(vehicleClient, 'CreateVehicle', {
+    const payload = {
         patente: req.body.patente || '',
         ...datosVehiculo(req.body)
-    });
+    };
+    
+    const r = await call(vehicleClient, 'CreateVehicle', payload);
     res.status(201).json(vehiculoRest(r.vehiculo));
 }));
 
 // PUT /api/vehiculos/:id (solo Admin)
 router.put('/:id', requireAdmin, handler(async (req, res) => {
     const id = idParam(req);
-    // El RPC siempre aplica `activo`: si no viene, se conserva el valor actual.
     const actual = (await call(vehicleClient, 'GetVehicle', { id })).vehiculo;
     const activo = typeof req.body.activo === 'boolean' ? req.body.activo : actual.activo;
-    const r = await call(vehicleClient, 'UpdateVehicle', { id, ...datosVehiculo(req.body), activo });
+    
+    const payload = { id, ...datosVehiculo(req.body), activo };
+
+    const r = await call(vehicleClient, 'UpdateVehicle', payload);
     res.json(vehiculoRest(r.vehiculo));
 }));
-
 // DELETE /api/vehiculos/:id (baja lógica, solo Admin)
 router.delete('/:id', requireAdmin, handler(async (req, res) => {
     const r = await call(vehicleClient, 'DeactivateVehicle', { id: idParam(req) });

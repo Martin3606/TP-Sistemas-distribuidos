@@ -76,6 +76,8 @@ services:
   vehicle-service:
     build:
       context: ./vehicle-service
+    ports:
+      - "50051:50051"
     container_name: vehicle-service
     environment:
       - DB_HOST=mysql-db
@@ -145,6 +147,8 @@ services:
   customer-service:
     build:
       context: ./customer-service
+    ports:
+      - "50052:50052"
     container_name: customer-service
     environment:
       - DB_HOST=mysql-db

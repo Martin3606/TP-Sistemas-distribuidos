@@ -12,6 +12,7 @@ const QUERY_HISTORIAL = `
       cantidadDias
       importeTotal
       estado
+      estadoMantenimiento
       vehiculo {
         patente
         marca
@@ -25,6 +26,30 @@ const QUERY_HISTORIAL = `
 const formatDate = (date) => {
   if (!date) return "-";
   return new Date(date).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
+};
+
+const getBadgeMantenimiento = (estado) => {
+  if (!estado || estado === "UNSPECIFIED") return <span style={{ color: "#94a3b8" }}>-</span>;
+  
+  let bg = "#f1f5f9";
+  let color = "#475569";
+
+  if (estado === "PENDIENTE") {
+    bg = "#ffedd5"; // Naranja claro
+    color = "#c2410c";
+  } else if (estado === "REALIZADO") {
+    bg = "#dcfce7"; // Verde claro
+    color = "#15803d";
+  } else if (estado === "NO_REALIZADO" || estado === "ERROR") {
+    bg = "#fee2e2"; // Rojo claro
+    color = "#b91c1c";
+  }
+  
+  return (
+    <span style={{ padding: "4px 10px", borderRadius: "12px", color, backgroundColor: bg, fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+      {estado.replace(/_/g, " ")}
+    </span>
+  );
 };
 
 function HistorialCliente() {
@@ -42,7 +67,6 @@ function HistorialCliente() {
     setError("");
 
     try {
-      // Si el clienteId está en sesión, lo envía. El backend además restringe por el token JWT si es cliente.
       const targetId = clienteId || "1";
       const data = await fetchGraphQL(QUERY_HISTORIAL, { clienteId: targetId.toString() });
       setHistorial(data.historialAlquileres || []);
@@ -80,11 +104,12 @@ function HistorialCliente() {
         </div>
       ) : (
         <div style={{ overflowX: "auto", width: "100%", WebkitOverflowScrolling: "touch" }}>
-          <table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", minWidth: "800px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Vehículo</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Patente</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Mantenimiento</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Inicio</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Fin</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Días</th>
@@ -101,6 +126,9 @@ function HistorialCliente() {
                   <td style={{ padding: "12px 16px", color: "#64748b" }}>
                     {h.vehiculo?.patente || "-"}
                   </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {getBadgeMantenimiento(h.estadoMantenimiento)}
+                  </td>
                   <td style={{ padding: "12px 16px", color: "#334155" }}>
                     {formatDate(h.fechaInicio)}
                   </td>
@@ -116,10 +144,7 @@ function HistorialCliente() {
                   <td style={{ padding: "12px 16px" }}>
                     <span
                       style={{
-                        padding: "0.25rem 0.65rem",
-                        borderRadius: "12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "bold",
+                        padding: "0.25rem 0.65rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "bold",
                         backgroundColor: h.estado === "CONFIRMADA" ? "#dcfce7" : h.estado === "CANCELADA" ? "#fee2e2" : "#e0f2fe",
                         color: h.estado === "CONFIRMADA" ? "#15803d" : h.estado === "CANCELADA" ? "#b91c1c" : "#0369a1",
                       }}

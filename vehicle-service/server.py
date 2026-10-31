@@ -76,8 +76,9 @@ def fila_a_vehicle(row):
         anio=row.anio, color=row.color or "", tipo_vehiculo=STR_A_TIPO[row.tipo_vehiculo],
         precio_diario_centavos=a_centavos(row.precio_diario), estado=STR_A_ESTADO[row.estado],
         activo=bool(row.activo),
-        resultado_verificacion=VERIF_A_ENUM[row.resultado_verificacion],
-        inhabilitado_por_robo=bool(row.inhabilitado_por_robo), origen=ORIGEN_A_ENUM[row.origen],
+        resultado_verificacion=VERIF_A_ENUM.get(row.resultado_verificacion, pb.VEHICLE_VERIFICATION_RESULT_UNSPECIFIED),
+        inhabilitado_por_robo=bool(row.inhabilitado_por_robo), 
+        origen=ORIGEN_A_ENUM.get(row.origen, pb.VEHICLE_ORIGIN_UNSPECIFIED),
     )
     if row.cliente_propietario_id is not None:
         vehicle.cliente_propietario_id = row.cliente_propietario_id
@@ -181,7 +182,7 @@ def procesar_validacion_externa(event, tipo):
         if request is None or normalizar_patente(request.patente) != plate:
             raise ValueError("Solicitud externa no coincide con el resultado")
         if tipo == "TITULARIDAD" and (request.cliente_id != int(data["clienteId"]) or
-                                       request.documento != str(data["documento"]).strip()):
+                                      request.documento != str(data["documento"]).strip()):
             raise ValueError("Cliente/documento no coincide con solicitud externa")
         conn.execute(text(
             "UPDATE vehiculo_externo_validacion SET resultado=:r "
@@ -274,16 +275,20 @@ class VehicleService(pb_grpc.VehicleServiceServicer):
     def CreateVehicle(self, request, context):
         validar_datos(context, request.patente, request.marca, request.modelo, request.anio,
                       request.tipo_vehiculo, request.precio_diario_centavos)
+        
         try:
             with engine.begin() as conn:
+                # Inyectamos directamente 'PROPIO', 'VALIDADO' y FALSE en la consulta
                 res = conn.execute(text(
-                    "INSERT INTO vehiculo (patente,marca,modelo,anio,color,tipo_vehiculo,precio_diario) "
-                    "VALUES (:p,:marca,:modelo,:anio,:color,:tipo,:precio)"),
+                    "INSERT INTO vehiculo "
+                    "(patente, marca, modelo, anio, color, tipo_vehiculo, precio_diario, origen, resultado_verificacion, inhabilitado_por_robo) "
+                    "VALUES (:p, :marca, :modelo, :anio, :color, :tipo, :precio, 'PROPIO', 'VALIDADO', FALSE)"),
                     {"p": normalizar_patente(request.patente), "marca": request.marca.strip(),
                      "modelo": request.modelo.strip(), "anio": request.anio, "color": request.color or None,
                      "tipo": TIPO_A_STR[request.tipo_vehiculo],
                      "precio": de_centavos(request.precio_diario_centavos)})
                 vehicle_id = res.lastrowid
+                
                 publish_event("vehiculos.verificacion.solicitada",
                               {"vehiculoId": vehicle_id, "patente": normalizar_patente(request.patente)})
         except IntegrityError as exc:
@@ -292,6 +297,7 @@ class VehicleService(pb_grpc.VehicleServiceServicer):
             raise
         except EventPublishError as exc:
             context.abort(grpc.StatusCode.UNAVAILABLE, str(exc))
+            
         return pb.VehicleResponse(vehiculo=self._obtener(vehicle_id, context))
 
     def UpdateVehicle(self, request, context):

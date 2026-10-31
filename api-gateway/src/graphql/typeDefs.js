@@ -15,7 +15,7 @@ const typeDefs = `#graphql
   enum ResultadoVerificacion { PENDIENTE VALIDADO ROBADO }
 
   """Estado del mantenimiento posterior a una reserva."""
-  enum EstadoMantenimiento { PENDIENTE REALIZADO NO_REQUERIDO ERROR }
+  enum EstadoMantenimiento { PENDIENTE REALIZADO NO_REALIZADO ERROR }
 
   """Representa a un cliente registrado en la plataforma."""
   type Cliente {

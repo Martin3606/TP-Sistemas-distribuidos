@@ -87,6 +87,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.3.4</version>
             </plugin>
 
             <!-- .proto -> clases Java (mensajes + stubs gRPC) -->

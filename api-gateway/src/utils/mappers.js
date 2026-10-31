@@ -76,7 +76,7 @@ function vehiculoGql(v) {
         precioDiario: aPesos(v.precio_diario_centavos),
         estado: quitar(v.estado, 'VEHICLE_STATUS_'),
         activo: !!v.activo,
-        // NUEVOS CAMPOS HITO 3 (en camelCase para GraphQL)
+        // NUEVOS CAMPOS HITO 3
         origen: quitar(v.origen, 'VEHICLE_ORIGIN_'),
         resultadoVerificacion: quitar(v.resultado_verificacion, 'VEHICLE_VERIFICATION_RESULT_'),
         inhabilitadoPorRobo: !!v.inhabilitado_por_robo
@@ -131,7 +131,7 @@ function reservaGql(r) {
         importeTotal: x.importe_total,
         estado: x.estado,
         cantidadDias: x.cantidad_dias,
-        // NUEVO CAMPO HITO 3 (en camelCase para GraphQL)
+        //NUEVO CAMPO HITO 3
         estadoMantenimiento: x.estado_mantenimiento
     };
 }

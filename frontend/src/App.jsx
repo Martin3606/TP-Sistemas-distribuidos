@@ -8,6 +8,8 @@ import Catalogo from "./pages/Catalogo.jsx";
 import MisReservas from "./pages/MisReservas.jsx";
 import HistorialCliente from "./pages/HistorialCliente.jsx";
 import Historial from "./pages/Historial.jsx";
+import RegistrarVehiculo from "./pages/RegistrarVehiculo.jsx"; // <-- NUEVA IMPORTACIÓN
+import MisVehiculos from "./pages/MisVehiculos.jsx"; // <-- NUEVA IMPORTACIÓN
 import RutaProtegida from "./auth/RutaProtegida.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 
@@ -61,7 +63,6 @@ function App() {
               </RutaProtegida>
             }
           />
-          {/* NUEVA RUTA: Historial para el Admin */}
           <Route
             path="/historial"
             element={
@@ -93,6 +94,23 @@ function App() {
             element={
               <RutaProtegida rolesPermitidos={["CLIENTE"]}>
                 <HistorialCliente />
+              </RutaProtegida>
+            }
+          />
+          {/* NUEVAS RUTAS HITO 3 */}
+          <Route
+            path="/mis-vehiculos"
+            element={
+              <RutaProtegida rolesPermitidos={["CLIENTE"]}>
+                <MisVehiculos />
+              </RutaProtegida>
+            }
+          />
+          <Route
+            path="/registrar-vehiculo"
+            element={
+              <RutaProtegida rolesPermitidos={["CLIENTE"]}>
+                <RegistrarVehiculo />
               </RutaProtegida>
             }
           />
