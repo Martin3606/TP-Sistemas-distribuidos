@@ -1,6 +1,30 @@
 import { useState, useEffect } from "react";
 import { fetchGraphQL, fetchREST } from "../services/api";
 
+const getBadgeMantenimiento = (estado) => {
+  if (!estado || estado === "UNSPECIFIED") return <span style={{ color: "#6c757d" }}>-</span>;
+  
+  let bg = "#e2e3e5";
+  let color = "#383d41";
+
+  if (estado === "PENDIENTE") {
+    bg = "#fff3cd"; // Amarillo claro
+    color = "#856404";
+  } else if (estado === "REALIZADO") {
+    bg = "#d4edda"; // Verde claro
+    color = "#155724";
+  } else if (estado === "NO_REALIZADO" || estado === "ERROR") {
+    bg = "#f8d7da"; // Rojo claro
+    color = "#721c24";
+  }
+
+  return (
+    <span style={{ padding: "4px 10px", borderRadius: "12px", color, backgroundColor: bg, fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+      {estado.replace(/_/g, " ")}
+    </span>
+  );
+};
+
 function Historial() {
   const [clientesLista, setClientesLista] = useState([]);
   const [clienteSeleccionado, setClienteSeleccionado] = useState("");
@@ -49,6 +73,7 @@ function Historial() {
           cantidadDias
           importeTotal
           estado
+          estadoMantenimiento
           vehiculo {
             patente
             marca
@@ -68,7 +93,7 @@ function Historial() {
     }
   };
 
- const handleCancelarReserva = async (reservaId) => {
+  const handleCancelarReserva = async (reservaId) => {
     if (!window.confirm("¿Seguro que deseas cancelar esta reserva?")) return;
     setError("");
     setSuccess("");
@@ -114,11 +139,12 @@ function Historial() {
         <p>Cargando historial...</p>
       ) : (
         <div style={{ overflowX: "auto", width: "100%", WebkitOverflowScrolling: "touch" }}>
-          <table style={{ width: "100%", minWidth: "650px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+          <table style={{ width: "100%", minWidth: "750px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Vehículo</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Patente</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Mantenimiento</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Inicio</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Fin</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Días</th>
@@ -129,7 +155,7 @@ function Historial() {
             </thead>
             <tbody>
               {reservas.length === 0 ? (
-                <tr><td colSpan="8" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No se encontraron reservas registradas para este cliente.</td></tr>
+                <tr><td colSpan="9" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>No se encontraron reservas registradas para este cliente.</td></tr>
               ) : (
                 reservas.map((r) => (
                   <tr key={r.id}>
@@ -138,6 +164,9 @@ function Historial() {
                     </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       {r.vehiculo ? r.vehiculo.patente : "-"}
+                    </td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
+                      {getBadgeMantenimiento(r.estadoMantenimiento)}
                     </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       {r.fechaInicio ? r.fechaInicio.replace("T", " ").substring(0, 16) : "-"}
@@ -150,11 +179,7 @@ function Historial() {
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
                         style={{
-                          padding: "4px 10px",
-                          borderRadius: "12px",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          display: "inline-block",
+                          padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold", display: "inline-block",
                           color: r.estado === "CONFIRMADA" ? "#155724" : r.estado === "CANCELADA" ? "#721c24" : "#0c5460",
                           backgroundColor: r.estado === "CONFIRMADA" ? "#d4edda" : r.estado === "CANCELADA" ? "#f8d7da" : "#d1ecf1",
                         }}
@@ -163,18 +188,12 @@ function Historial() {
                       </span>
                     </td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", whiteSpace: "nowrap" }}>
-                      {/* Validamos que sea CONFIRMADA y que la fecha de inicio sea en el futuro */}
                       {r.estado === "CONFIRMADA" && new Date(r.fechaInicio) > new Date() ? (
                         <button
                           onClick={() => handleCancelarReserva(r.id)}
                           style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#dc3545",
-                            color: "#fff",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontWeight: "bold",
-                            cursor: "pointer",
+                            padding: "6px 12px", backgroundColor: "#dc3545", color: "#fff",
+                            border: "none", borderRadius: "6px", fontWeight: "bold", cursor: "pointer",
                           }}
                         >
                           Cancelar Reserva

@@ -18,6 +18,7 @@ const QUERY_MIS_RESERVAS = `
       importeTotal
       estado
       cantidadDias
+      estadoMantenimiento
     }
   }
 `;
@@ -27,9 +28,32 @@ const formatDate = (date) => {
   return new Date(date).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
 };
 
+const getBadgeMantenimiento = (estado) => {
+  if (!estado || estado === "UNSPECIFIED") return <span style={{ color: "#94a3b8" }}>-</span>;
+  
+  let bg = "#f1f5f9";
+  let color = "#475569";
+
+  if (estado === "PENDIENTE") {
+    bg = "#ffedd5"; // Naranja claro
+    color = "#c2410c";
+  } else if (estado === "REALIZADO") {
+    bg = "#dcfce7"; // Verde claro
+    color = "#15803d";
+  } else if (estado === "NO_REALIZADO" || estado === "ERROR") {
+    bg = "#fee2e2"; // Rojo claro
+    color = "#b91c1c";
+  }
+  
+  return (
+    <span style={{ padding: "4px 10px", borderRadius: "12px", color, backgroundColor: bg, fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+      {estado.replace(/_/g, " ")}
+    </span>
+  );
+};
+
 function MisReservas() {
   const { user, clienteId } = useAuth();
-
   const [reservas, setReservas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +69,6 @@ function MisReservas() {
     setSuccess("");
 
     try {
-      // El backend de GraphQL restringe automáticamente por clienteId si es rol CLIENTE
       const variables = clienteId ? { filtro: { clienteId: parseInt(clienteId, 10) } } : { filtro: {} };
       const data = await fetchGraphQL(QUERY_MIS_RESERVAS, variables);
       setReservas(data.consultarReservas || []);
@@ -67,7 +90,6 @@ function MisReservas() {
       } catch {
         await fetchREST(`/api/reservas/${reservaId}/cancelar`, { method: "PATCH" });
       }
-
       setSuccess("La reserva ha sido cancelada correctamente.");
       cargarReservas();
     } catch (err) {
@@ -87,17 +109,8 @@ function MisReservas() {
         </div>
       </div>
 
-      {error && (
-        <div style={{ padding: "1rem", backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "8px", marginBottom: "1.5rem" }}>
-          ⚠️ {error}
-        </div>
-      )}
-
-      {success && (
-        <div style={{ padding: "1rem", backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", borderRadius: "8px", marginBottom: "1.5rem" }}>
-          ✅ {success}
-        </div>
-      )}
+      {error && <div style={{ padding: "1rem", backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "8px", marginBottom: "1.5rem" }}>⚠️ {error}</div>}
+      {success && <div style={{ padding: "1rem", backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", borderRadius: "8px", marginBottom: "1.5rem" }}>✅ {success}</div>}
 
       {cargando ? (
         <p style={{ color: "#64748b" }}>Cargando tus reservas...</p>
@@ -108,11 +121,12 @@ function MisReservas() {
         </div>
       ) : (
         <div style={{ overflowX: "auto", width: "100%", WebkitOverflowScrolling: "touch" }}>
-          <table style={{ width: "100%", minWidth: "700px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
+          <table style={{ width: "100%", minWidth: "800px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e2e8f0" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Vehículo</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Patente</th>
+                <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Mantenimiento</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Inicio</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Fecha Fin</th>
                 <th style={{ padding: "12px 16px", color: "#475569", fontWeight: "bold" }}>Días</th>
@@ -130,6 +144,9 @@ function MisReservas() {
                   <td style={{ padding: "12px 16px", color: "#64748b" }}>
                     {r.vehiculo?.patente || "-"}
                   </td>
+                  <td style={{ padding: "12px 16px" }}>
+                    {getBadgeMantenimiento(r.estadoMantenimiento)}
+                  </td>
                   <td style={{ padding: "12px 16px", color: "#334155" }}>
                     {formatDate(r.fechaInicio)}
                   </td>
@@ -145,10 +162,7 @@ function MisReservas() {
                   <td style={{ padding: "12px 16px" }}>
                     <span
                       style={{
-                        padding: "0.25rem 0.65rem",
-                        borderRadius: "12px",
-                        fontSize: "0.75rem",
-                        fontWeight: "bold",
+                        padding: "0.25rem 0.65rem", borderRadius: "12px", fontSize: "0.75rem", fontWeight: "bold",
                         backgroundColor: r.estado === "CONFIRMADA" ? "#dcfce7" : r.estado === "CANCELADA" ? "#fee2e2" : "#e0f2fe",
                         color: r.estado === "CONFIRMADA" ? "#15803d" : r.estado === "CANCELADA" ? "#b91c1c" : "#0369a1",
                       }}
@@ -161,14 +175,8 @@ function MisReservas() {
                       <button
                         onClick={() => handleCancelarReserva(r.id)}
                         style={{
-                          padding: "0.4rem 0.85rem",
-                          backgroundColor: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontWeight: "bold",
-                          fontSize: "0.8rem",
-                          cursor: "pointer"
+                          padding: "0.4rem 0.85rem", backgroundColor: "#ef4444", color: "white",
+                          border: "none", borderRadius: "6px", fontWeight: "bold", fontSize: "0.8rem", cursor: "pointer"
                         }}
                       >
                         Cancelar Reserva

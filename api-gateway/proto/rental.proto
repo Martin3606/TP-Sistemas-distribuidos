@@ -37,6 +37,13 @@ enum RentalState {
   RENTAL_STATE_FINALIZADA = 3; // Alquiler completado y auto devuelto
 }
 
+enum MaintenanceResult {
+  MAINTENANCE_RESULT_UNSPECIFIED = 0;
+  MAINTENANCE_RESULT_PENDIENTE = 1;
+  MAINTENANCE_RESULT_REALIZADO = 2;
+  MAINTENANCE_RESULT_NO_REALIZADO = 3;
+}
+
 // Entidad que representa la transaccion del alquiler
 message Rental {
   int32 id = 1;
@@ -47,6 +54,7 @@ message Rental {
   int64 precio_diario_snapshot_centavos = 6; // Foto del precio al momento de confirmar
   int64 importe_total_centavos = 7; // Calculado automáticamente (días * precio_snapshot)
   RentalState estado = 8;
+  MaintenanceResult resultado_mantenimiento = 9;
 }
 
 message CreateRentalRequest {

@@ -23,6 +23,13 @@ enum RentalState {
   RENTAL_STATE_FINALIZADA = 3;
 }
 
+enum MaintenanceResult {
+  MAINTENANCE_RESULT_UNSPECIFIED = 0;
+  MAINTENANCE_RESULT_PENDIENTE = 1;
+  MAINTENANCE_RESULT_REALIZADO = 2;
+  MAINTENANCE_RESULT_NO_REALIZADO = 3;
+}
+
 message Rental {
   int32 id = 1;
   int32 cliente_id = 2;
@@ -32,6 +39,7 @@ message Rental {
   int64 precio_diario_snapshot_centavos = 6;
   int64 importe_total_centavos = 7;
   RentalState estado = 8;
+  MaintenanceResult resultado_mantenimiento = 9;
 }
 
 message CreateRentalRequest {

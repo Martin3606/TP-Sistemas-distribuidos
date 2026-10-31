@@ -73,6 +73,7 @@ function Navbar() {
             <li><NavLink to="/catalogo">Catálogo y Reservas</NavLink></li>
             <li><NavLink to="/mis-reservas">Mis Reservas</NavLink></li>
             <li><NavLink to="/historial-cliente">Mi Historial</NavLink></li>
+            <li><NavLink to="/mis-vehiculos">Mis Vehículos</NavLink></li>
           </>
         )}
 

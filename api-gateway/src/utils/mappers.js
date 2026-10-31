@@ -2,7 +2,12 @@
 // y el formato que consume el frontend (pesos, enums cortos, fechas ISO).
 const { HttpError } = require('./errors');
 
-const quitar = (valor, prefijo) => String(valor || '').replace(prefijo, '');
+const quitar = (valor, prefijo) => {
+    const s = String(valor || '');
+    // Si viene como UNSPECIFIED o vacío, devolvemos null para no ensuciar la respuesta
+    if (!s || s.includes('UNSPECIFIED')) return null;
+    return s.replace(prefijo, '');
+};
 
 const aPesos = (centavos) => Number(centavos || 0) / 100;
 const aCentavos = (pesos) => Math.round(Number(pesos) * 100);
@@ -32,7 +37,7 @@ function parsearFecha(valor, nombre = 'fecha') {
 }
 
 const aTimestamp = (segundos) => ({ seconds: segundos });
-const deTimestamp = (ts) => (ts ? new Date(Number(ts.seconds) * 1000).toISOString().slice(0, 19) : null);
+const deTimestamp = (ts) => (ts && ts.seconds ? new Date(Number(ts.seconds) * 1000).toISOString().slice(0, 19) : null);
 
 function cantidadDias(inicioSeg, finSeg) {
     return Math.max(1, Math.ceil((finSeg - inicioSeg) / 86400));
@@ -51,7 +56,11 @@ function vehiculoRest(v) {
         precio_diario: aPesos(v.precio_diario_centavos),
         precio_diario_centavos: Number(v.precio_diario_centavos),
         estado: quitar(v.estado, 'VEHICLE_STATUS_'),
-        activo: !!v.activo
+        activo: !!v.activo,
+        // NUEVOS CAMPOS HITO 3
+        origen: quitar(v.origen, 'VEHICLE_ORIGIN_'),
+        resultado_verificacion: quitar(v.resultado_verificacion, 'VEHICLE_VERIFICATION_RESULT_'),
+        inhabilitado_por_robo: !!v.inhabilitado_por_robo
     };
 }
 
@@ -66,7 +75,11 @@ function vehiculoGql(v) {
         tipoVehiculo: quitar(v.tipo_vehiculo, 'VEHICLE_TYPE_'),
         precioDiario: aPesos(v.precio_diario_centavos),
         estado: quitar(v.estado, 'VEHICLE_STATUS_'),
-        activo: !!v.activo
+        activo: !!v.activo,
+        // NUEVOS CAMPOS HITO 3
+        origen: quitar(v.origen, 'VEHICLE_ORIGIN_'),
+        resultadoVerificacion: quitar(v.resultado_verificacion, 'VEHICLE_VERIFICATION_RESULT_'),
+        inhabilitadoPorRobo: !!v.inhabilitado_por_robo
     };
 }
 
@@ -89,8 +102,16 @@ function clienteGql(c) {
 }
 
 function reservaRest(r) {
-    const ini = Number(r.fecha_inicio.seconds);
-    const fin = Number(r.fecha_fin.seconds);
+    const ini = r.fecha_inicio ? Number(r.fecha_inicio.seconds) : 0;
+    const fin = r.fecha_fin ? Number(r.fecha_fin.seconds) : 0;
+    
+    // Soporta tanto resultado_mantenimiento (del proto) como estado_mantenimiento
+    const crudoMantenimiento = r.resultado_mantenimiento || r.estado_mantenimiento;
+    const mantenimientoLimpio = quitar(
+        quitar(crudoMantenimiento, 'MAINTENANCE_RESULT_'),
+        'MAINTENANCE_STATUS_'
+    );
+
     return {
         id: r.id,
         cliente_id: r.cliente_id,
@@ -100,7 +121,9 @@ function reservaRest(r) {
         precio_diario_snapshot: aPesos(r.precio_diario_snapshot_centavos),
         importe_total: aPesos(r.importe_total_centavos),
         estado: quitar(r.estado, 'RENTAL_STATE_'),
-        cantidad_dias: cantidadDias(ini, fin)
+        cantidad_dias: cantidadDias(ini, fin),
+        // NUEVO CAMPO HITO 3
+        estado_mantenimiento: mantenimientoLimpio
     };
 }
 
@@ -115,7 +138,9 @@ function reservaGql(r) {
         precioDiarioSnapshot: x.precio_diario_snapshot,
         importeTotal: x.importe_total,
         estado: x.estado,
-        cantidadDias: x.cantidad_dias
+        cantidadDias: x.cantidad_dias,
+        // NUEVO CAMPO HITO 3
+        estadoMantenimiento: x.estado_mantenimiento
     };
 }
 

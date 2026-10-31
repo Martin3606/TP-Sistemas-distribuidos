@@ -179,3 +179,25 @@ export async function fetchGraphQL(query, variables = {}) {
     throw new Error(sanitizarMensajeError(error));
   }
 }
+
+/**
+ * HITO 3: Permite a un cliente registrar un vehículo externo
+ */
+export async function registrarVehiculoExterno(datosVehiculo) {
+  return fetchREST("/api/vehiculos/externos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(datosVehiculo),
+  });
+}
+
+/**
+ * HITO 3: Trae las solicitudes de vehículos externos del cliente logueado
+ */
+export async function listarMisVehiculosExternos() {
+  return fetchREST("/api/vehiculos/externos/solicitudes", { 
+    method: "GET" 
+  });
+}

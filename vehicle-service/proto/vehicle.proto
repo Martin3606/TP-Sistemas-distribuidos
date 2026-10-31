@@ -16,6 +16,12 @@ service VehicleService {
   rpc DeactivateVehicle(DeactivateVehicleRequest) returns (VehicleResponse);
 
   rpc UpdateVehicleStatus(UpdateVehicleStatusRequest) returns (VehicleResponse);
+
+  // Registra un vehículo de un cliente para validarlo de manera asíncrona.
+  rpc RegisterExternalVehicle(RegisterExternalVehicleRequest) returns (ExternalVehicleRequestResponse);
+
+  // Consulta las solicitudes de incorporación de un cliente y sus estados.
+  rpc ListExternalVehicleRequests(ListExternalVehicleRequestsRequest) returns (ListExternalVehicleRequestsResponse);
 }
 
 enum VehicleType {
@@ -34,6 +40,33 @@ enum VehicleStatus {
   VEHICLE_STATUS_EN_ALQUILER = 3;
 }
 
+enum VehicleVerificationResult {
+  VEHICLE_VERIFICATION_RESULT_UNSPECIFIED = 0;
+  VEHICLE_VERIFICATION_RESULT_PENDIENTE = 1;
+  VEHICLE_VERIFICATION_RESULT_VALIDADO = 2;
+  VEHICLE_VERIFICATION_RESULT_ROBADO = 3;
+}
+
+enum VehicleOrigin {
+  VEHICLE_ORIGIN_UNSPECIFIED = 0;
+  VEHICLE_ORIGIN_PROPIO = 1;
+  VEHICLE_ORIGIN_EXTERNO = 2;
+}
+
+enum ExternalVehicleRequestStatus {
+  EXTERNAL_VEHICLE_REQUEST_STATUS_UNSPECIFIED = 0;
+  EXTERNAL_VEHICLE_REQUEST_STATUS_PENDIENTE = 1;
+  EXTERNAL_VEHICLE_REQUEST_STATUS_RECHAZADO = 2;
+  EXTERNAL_VEHICLE_REQUEST_STATUS_INCORPORADO = 3;
+}
+
+enum ExternalVehicleValidationResult {
+  EXTERNAL_VEHICLE_VALIDATION_RESULT_UNSPECIFIED = 0;
+  EXTERNAL_VEHICLE_VALIDATION_RESULT_PENDIENTE = 1;
+  EXTERNAL_VEHICLE_VALIDATION_RESULT_VALIDADO = 2;
+  EXTERNAL_VEHICLE_VALIDATION_RESULT_RECHAZADO = 3;
+}
+
 message Vehicle {
   int32 id = 1;
   string patente = 2;
@@ -45,6 +78,10 @@ message Vehicle {
   int64 precio_diario_centavos = 8;
   VehicleStatus estado = 9;
   bool activo = 10;
+  VehicleVerificationResult resultado_verificacion = 11;
+  bool inhabilitado_por_robo = 12;
+  VehicleOrigin origen = 13;
+  optional int32 cliente_propietario_id = 14;
 }
 
 message VehicleFilter {
@@ -109,4 +146,46 @@ message UpdateVehicleStatusRequest {
 
 message VehicleResponse {
   Vehicle vehiculo = 1;
+}
+
+message RegisterExternalVehicleRequest {
+  int32 cliente_id = 1;
+  string documento = 2;
+  string patente = 3;
+  string marca = 4;
+  string modelo = 5;
+  int32 anio = 6;
+  string color = 7;
+  VehicleType tipo_vehiculo = 8;
+  int64 precio_diario_centavos = 9;
+}
+
+message ExternalVehicleRequest {
+  int32 id = 1;
+  int32 cliente_id = 2;
+  string documento = 3;
+  string patente = 4;
+  string marca = 5;
+  string modelo = 6;
+  int32 anio = 7;
+  string color = 8;
+  VehicleType tipo_vehiculo = 9;
+  int64 precio_diario_centavos = 10;
+  ExternalVehicleRequestStatus estado = 11;
+  ExternalVehicleValidationResult resultado_patente = 12;
+  ExternalVehicleValidationResult resultado_titularidad = 13;
+  int32 vehiculo_id = 14;
+  google.protobuf.Timestamp created_at = 15;
+}
+
+message ExternalVehicleRequestResponse {
+  ExternalVehicleRequest solicitud = 1;
+}
+
+message ListExternalVehicleRequestsRequest {
+  int32 cliente_id = 1;
+}
+
+message ListExternalVehicleRequestsResponse {
+  repeated ExternalVehicleRequest solicitudes = 1;
 }

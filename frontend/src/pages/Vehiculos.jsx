@@ -48,11 +48,13 @@ function Vehiculos() {
   const [form, setForm] = useState(() => getInitialVehiculoDraft().form);
   const [editando, setEditando] = useState(() => getInitialVehiculoDraft().editando);
 
+  // Filtro de búsqueda actualizado para incluir los campos del Hito 3
   const terminoBusqueda = normalizarBusqueda(busqueda.trim());
   const vehiculosFiltrados = vehiculos.filter((v) => {
     const textoVehiculo = normalizarBusqueda([
       v.patente, v.marca, v.modelo, v.anio, v.color, v.tipo_vehiculo,
-      v.precio_diario, v.estado, v.activo ? "activo" : "inactivo"
+      v.precio_diario, v.estado, v.activo ? "activo" : "inactivo",
+      v.origen, v.resultado_verificacion, v.inhabilitado_por_robo ? "robado inhabilitado" : ""
     ].join(" "));
     return textoVehiculo.includes(terminoBusqueda);
   });
@@ -122,7 +124,6 @@ function Vehiculos() {
     const colorTrim = form.color ? form.color.trim() : "";
     const precioDiarioStr = form.precio_diario !== null && form.precio_diario !== undefined ? String(form.precio_diario).trim() : "";
 
-    // 1. Bloqueo de espacios vacíos para campos obligatorios
     if (!editando && !patenteTrim) newFieldErrors.patente = true;
     if (!marcaTrim) newFieldErrors.marca = true;
     if (!modeloTrim) newFieldErrors.modelo = true;
@@ -134,7 +135,6 @@ function Vehiculos() {
       return;
     }
 
-    // 2. Validación de Formato y Unicidad de Patente (solo al crear)
     if (!editando) {
       const regexPatenteFormat = /^([A-Z]{3}\d{3}|[A-Z]{2}\d{3}[A-Z]{2})$/i;
       if (!regexPatenteFormat.test(patenteTrim)) {
@@ -153,7 +153,6 @@ function Vehiculos() {
       }
     }
 
-    // 3. Validación de Marca, Modelo y Color (Regex)
     const regexTextoVehiculo = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s\-]+$/;
     let hasTextError = false;
     if (!regexTextoVehiculo.test(marcaTrim)) {
@@ -200,6 +199,7 @@ function Vehiculos() {
           color: colorTrim || null,
           tipo_vehiculo: form.tipo_vehiculo,
           precio_diario: precioNum,
+          origen: "PROPIO",
         };
 
         await fetchREST(`/api/vehiculos/${form.id}`, {
@@ -217,6 +217,7 @@ function Vehiculos() {
           color: colorTrim || null,
           tipo_vehiculo: form.tipo_vehiculo,
           precio_diario: precioNum,
+          origen: "PROPIO",
         };
 
         await fetchREST("/api/vehiculos", {
@@ -278,10 +279,32 @@ function Vehiculos() {
     }
   };
 
+  // Funciones auxiliares para renderizar badges del Hito 3
+  const getBadgeOrigen = (origen) => {
+    if (!origen || origen === "UNSPECIFIED") return <span style={{ color: "#94a3b8" }}>-</span>;
+    const bg = origen === "PROPIO" ? "#e0e7ff" : "#fae8ff"; // Indigo vs Fuchsia pastel
+    const color = origen === "PROPIO" ? "#3730a3" : "#86198f";
+    return (
+      <span style={{ padding: "4px 10px", borderRadius: "12px", color, backgroundColor: bg, fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+        {origen}
+      </span>
+    );
+  };
+
+  const getBadgeVerificacion = (res) => {
+    if (!res || res === "UNSPECIFIED") return <span style={{ color: "#94a3b8" }}>N/A</span>;
+    const bg = res === "VALIDADO" ? "#dcfce7" : res === "ROBADO" ? "#fee2e2" : "#e0f2fe";
+    const color = res === "VALIDADO" ? "#15803d" : res === "ROBADO" ? "#b91c1c" : "#0369a1";
+    return (
+      <span style={{ padding: "4px 10px", borderRadius: "12px", color, backgroundColor: bg, fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+        {res}
+      </span>
+    );
+  };
+
   return (
     <section style={{ padding: "15px", width: "100%", boxSizing: "border-box" }}>
       <h1>Gestión de Flota de Vehículos</h1>
-
 
       {error && <div style={{ color: "#721c24", backgroundColor: "#f8d7da", borderColor: "#f5c6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>⚠️ {error}</div>}
       {success && <div style={{ color: "#155724", backgroundColor: "#d4edda", borderColor: "#c3e6cb", padding: "12px", borderRadius: "6px", marginBottom: "15px" }}>✅ {success}</div>}
@@ -301,132 +324,71 @@ function Vehiculos() {
               disabled={editando}
               required
               style={{
-                width: "100%",
-                padding: "10px",
-                backgroundColor: editando ? "#e9ecef" : "#fff",
+                width: "100%", padding: "10px", backgroundColor: editando ? "#e9ecef" : "#fff",
                 border: fieldErrors.patente ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Marca *</label>
             <input
-              type="text"
-              name="marca"
-              value={form.marca}
-              onChange={handleChange}
-              required
+              type="text" name="marca" value={form.marca} onChange={handleChange} required
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.marca ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.marca ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Modelo *</label>
             <input
-              type="text"
-              name="modelo"
-              value={form.modelo}
-              onChange={handleChange}
-              required
+              type="text" name="modelo" value={form.modelo} onChange={handleChange} required
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.modelo ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.modelo ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Año *</label>
             <input
-              type="number"
-              name="anio"
-              min="1900"
-              max={new Date().getFullYear()}
-              value={form.anio}
-              onChange={handleChange}
-              required
+              type="number" name="anio" min="1900" max={new Date().getFullYear()} value={form.anio} onChange={handleChange} required
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.anio ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.anio ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Color</label>
             <input
-              type="text"
-              name="color"
-              value={form.color}
-              onChange={handleChange}
+              type="text" name="color" value={form.color} onChange={handleChange}
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.color ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.color ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Tipo de Vehículo *</label>
             <select
-              name="tipo_vehiculo"
-              value={form.tipo_vehiculo}
-              onChange={handleChange}
+              name="tipo_vehiculo" value={form.tipo_vehiculo} onChange={handleChange}
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.tipo_vehiculo ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.tipo_vehiculo ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             >
-              {TIPOS_VEHICULO.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
+              {TIPOS_VEHICULO.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>
             <label style={{ display: "block", marginBottom: "5px", fontWeight: "bold", fontSize: "0.9em", color: "#333" }}>Precio Diario ($) *</label>
             <input
-              type="number"
-              step="0.01"
-              name="precio_diario"
-              value={form.precio_diario}
-              onChange={handleChange}
-              required
+              type="number" step="0.01" name="precio_diario" value={form.precio_diario} onChange={handleChange} required
               style={{
-                width: "100%",
-                padding: "10px",
-                border: fieldErrors.precio_diario ? "2px solid #dc3545" : "1px solid #ccc",
-                borderRadius: "4px",
-                boxSizing: "border-box",
-                fontSize: "0.95em",
-                transition: "border-color 0.3s",
+                width: "100%", padding: "10px", border: fieldErrors.precio_diario ? "2px solid #dc3545" : "1px solid #ccc",
+                borderRadius: "4px", boxSizing: "border-box", fontSize: "0.95em", transition: "border-color 0.3s",
               }}
             />
           </div>
@@ -435,32 +397,19 @@ function Vehiculos() {
           <button
             type="submit"
             style={{
-              padding: "10px 20px",
-              backgroundColor: "#007bff",
-              color: "#fff",
-              border: "none",
-              borderRadius: "6px",
-              fontWeight: "bold",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              cursor: "pointer",
-              marginRight: "10px",
+              padding: "10px 20px", backgroundColor: "#007bff", color: "#fff", border: "none",
+              borderRadius: "6px", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              cursor: "pointer", marginRight: "10px",
             }}
           >
             {editando ? "Guardar Cambios" : "Crear Vehículo"}
           </button>
           {editando && (
             <button
-              type="button"
-              onClick={limpiarFormulario}
+              type="button" onClick={limpiarFormulario}
               style={{
-                padding: "10px 20px",
-                backgroundColor: "#6c757d",
-                color: "#fff",
-                border: "none",
-                borderRadius: "6px",
-                fontWeight: "bold",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                cursor: "pointer",
+                padding: "10px 20px", backgroundColor: "#6c757d", color: "#fff", border: "none",
+                borderRadius: "6px", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", cursor: "pointer",
               }}
             >
               Cancelar
@@ -472,52 +421,64 @@ function Vehiculos() {
       <h3 style={{ color: "#333" }}>Catálogo de la Flota</h3>
       <div style={{ marginBottom: "12px" }}>
         <input
-          type="search"
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar por patente, marca, modelo, año, color o estado..."
+          type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar por patente, marca, origen, verificación o estado..."
           aria-label="Buscar vehículos"
           style={{ width: "100%", maxWidth: "520px", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", boxSizing: "border-box" }}
         />
         {busqueda && <span style={{ marginLeft: "10px", color: "#666", fontSize: "0.9em" }}>{vehiculosFiltrados.length} resultado(s)</span>}
       </div>
+      
       {loading ? (
         <p>Cargando catálogo...</p>
       ) : (
         <div style={{ overflowX: "auto", width: "100%", WebkitOverflowScrolling: "touch" }}>
-          <table style={{ width: "100%", minWidth: "650px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
+          <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", textAlign: "left", backgroundColor: "#ffffff", borderRadius: "8px", overflow: "hidden", boxShadow: "0 4px 6px rgba(0,0,0,0.05)" }}>
             <thead>
               <tr style={{ backgroundColor: "#f8f9fa" }}>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Patente</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Marca / Modelo / Año</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Tipo</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Origen</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Verificación</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Robo</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Precio Diario</th>
-                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Estado Operativo</th>
+                <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Estado</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Activo</th>
                 <th style={{ padding: "12px", borderBottom: "1px solid #eaeaea", color: "#495057", fontWeight: "bold" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {vehiculosFiltrados.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>{vehiculos.length === 0 ? "No hay vehículos registrados." : "No se encontraron vehículos con esa búsqueda."}</td></tr>
+                <tr><td colSpan="10" style={{ padding: "12px", borderBottom: "1px solid #eaeaea", textAlign: "center" }}>{vehiculos.length === 0 ? "No hay vehículos registrados." : "No se encontraron vehículos con esa búsqueda."}</td></tr>
               ) : (
                 vehiculosFiltrados.map((v) => (
                   <tr key={v.patente} style={{ backgroundColor: v.activo ? "#ffffff" : "#fff5f5" }}>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea", fontWeight: "bold" }}>{v.patente}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.marca} {v.modelo} ({v.anio})</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{v.tipo_vehiculo}</td>
-                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>${v.precio_diario}</td>
+                    
+                    {/* NUEVAS COLUMNAS HITO 3 */}
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{getBadgeOrigen(v.origen)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>{getBadgeVerificacion(v.resultado_verificacion)}</td>
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
+                      {v.inhabilitado_por_robo ? (
+                        <span style={{ padding: "4px 10px", borderRadius: "12px", color: "#b91c1c", backgroundColor: "#fee2e2", fontSize: "12px", fontWeight: "bold", display: "inline-block" }}>
+                          SÍ - BLOQUEADO
+                        </span>
+                      ) : (
+                        <span style={{ color: "#94a3b8", fontSize: "12px", fontWeight: "bold" }}>NO</span>
+                      )}
+                    </td>
 
+                    <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>${v.precio_diario}</td>
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
                         style={{
-                          padding: "4px 10px",
-                          borderRadius: "12px",
+                          padding: "4px 10px", borderRadius: "12px",
                           color: v.estado === "DISPONIBLE" ? "#155724" : v.estado === "RESERVADO" || v.estado === "EN_ALQUILER" ? "#856404" : "#383d41",
                           backgroundColor: v.estado === "DISPONIBLE" ? "#d4edda" : v.estado === "RESERVADO" || v.estado === "EN_ALQUILER" ? "#fff3cd" : "#e2e3e5",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          display: "inline-block",
+                          fontSize: "12px", fontWeight: "bold", display: "inline-block",
                         }}
                       >
                         {v.estado}
@@ -526,13 +487,10 @@ function Vehiculos() {
                     <td style={{ padding: "12px", borderBottom: "1px solid #eaeaea" }}>
                       <span
                         style={{
-                          padding: "4px 10px",
-                          borderRadius: "12px",
+                          padding: "4px 10px", borderRadius: "12px",
                           color: v.activo ? "#155724" : "#721c24",
                           backgroundColor: v.activo ? "#d4edda" : "#f8d7da",
-                          fontSize: "12px",
-                          fontWeight: "bold",
-                          display: "inline-block",
+                          fontSize: "12px", fontWeight: "bold", display: "inline-block",
                         }}
                       >
                         {v.activo ? "ACTIVO" : "INACTIVO"}
@@ -543,14 +501,8 @@ function Vehiculos() {
                         <button
                           onClick={() => handleEdit(v)}
                           style={{
-                            padding: "6px 12px",
-                            backgroundColor: "#ffc107",
-                            color: "#212529",
-                            border: "none",
-                            borderRadius: "6px",
-                            fontWeight: "bold",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                            cursor: "pointer",
+                            padding: "6px 12px", backgroundColor: "#ffc107", color: "#212529",
+                            border: "none", borderRadius: "6px", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", cursor: "pointer",
                           }}
                         >
                           Editar
@@ -559,14 +511,8 @@ function Vehiculos() {
                           <button
                             onClick={() => handleBajaLogica(v.id)}
                             style={{
-                              padding: "6px 12px",
-                              backgroundColor: "#dc3545",
-                              color: "#fff",
-                              border: "none",
-                              borderRadius: "6px",
-                              fontWeight: "bold",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                              cursor: "pointer",
+                              padding: "6px 12px", backgroundColor: "#dc3545", color: "#fff",
+                              border: "none", borderRadius: "6px", fontWeight: "bold", boxShadow: "0 2px 4px rgba(0,0,0,0.1)", cursor: "pointer",
                             }}
                           >
                             Dar de Baja

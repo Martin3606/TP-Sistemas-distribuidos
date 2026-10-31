@@ -1,6 +1,42 @@
-# Rentar - Hito 2 (microservicios)
+# Rentar - Hito 3 (microservicios y eventos)
 # MySQL se publica en el puerto 3307 del host (el 3306 queda libre para un MySQL local).
 services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rentar-rabbitmq
+    hostname: rentar-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rentar}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rentar_dev}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - rentar-network
+
+  rabbitmq-topology-init:
+    build:
+      context: ./rabbitmq
+    container_name: rentar-rabbitmq-topology-init
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-rentar}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-rentar_dev}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - rentar-network
+
   mysql-db:
     image: mysql:8.0
     container_name: rentar-mysql
@@ -40,6 +76,8 @@ services:
   vehicle-service:
     build:
       context: ./vehicle-service
+    ports:
+      - "50051:50051"
     container_name: vehicle-service
     environment:
       - DB_HOST=mysql-db
@@ -48,15 +86,69 @@ services:
       - DB_PASSWORD=root
       - DB_NAME=db_vehiculos
       - GRPC_PORT=50051
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
     networks:
       - rentar-network
     depends_on:
       mysql-db:
         condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
+
+  verification-service:
+    build:
+      context: ./verification-service
+    container_name: verification-service
+    environment:
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_vehiculos
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
+      - VERIFICATION_DELAY_SECONDS=${VERIFICATION_DELAY_SECONDS:-2}
+    networks:
+      - rentar-network
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
+
+  maintenance-service:
+    build:
+      context: ./maintenance-service
+    container_name: maintenance-service
+    environment:
+      - DB_HOST=mysql-db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=db_mantenimiento
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=${RABBITMQ_USER:-rentar}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
+      - MAINTENANCE_DELAY_SECONDS=3 # Para simular el tiempo de procesamiento
+    networks:
+      - rentar-network
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully      
 
   customer-service:
     build:
       context: ./customer-service
+    ports:
+      - "50052:50052"
     container_name: customer-service
     environment:
       - DB_HOST=mysql-db
@@ -84,11 +176,17 @@ services:
       - DB_NAME=db_alquileres
       - GRPC_PORT=50053
       - APP_ZONE=America/Argentina/Buenos_Aires
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER:-rentar}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD:-rentar_dev}
     networks:
       - rentar-network
     depends_on:
       mysql-db:
         condition: service_healthy
+      rabbitmq-topology-init:
+        condition: service_completed_successfully
 
 networks:
   rentar-network:
@@ -96,3 +194,4 @@ networks:
 
 volumes:
   db_data:
+  rabbitmq_data:
